@@ -98,6 +98,7 @@
         <module>modules/rocketmq</module>
         <module>modules/sqlline</module>
         <module>modules/ml</module>
+        <module>modules/recovery</module>
     </modules>
 
     <profiles>
@@ -113,6 +114,14 @@
                 <module>modules/schedule</module>
                 <module>modules/web-console/web-agent</module>
                 <module>modules/yardstick</module>
+
+            </modules>
+        </profile>
+
+        <profile>
+            <id>recovery</id>
+            <modules>
+                <module>modules/recovery</module>
             </modules>
         </profile>
 
