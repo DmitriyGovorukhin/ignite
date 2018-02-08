@@ -84,7 +84,7 @@ public class RecoveryTest extends GridCommonAbstractTest {
                 cache.put(i, arr);
 
                 if (i % 100 == 0)
-                    System.err.println("Loaded:" + i);
+                    log.info("Loaded:" + i);
             }
 
         }
@@ -94,7 +94,7 @@ public class RecoveryTest extends GridCommonAbstractTest {
 
         stopGrid();
 
-        System.err.println("Node restart!");
+        log.info("Node restart!");
 
         ig = (IgniteEx)startGrid();
 
