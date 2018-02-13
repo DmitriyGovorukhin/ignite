@@ -59,6 +59,10 @@ public class RecoveryProcessor {
         return new IgniteFinishedFutureImpl<>();
     }
 
+    public IgniteFuture<?> verifyCacheConfigurations() {
+        return new IgniteFinishedFutureImpl<>();
+    }
+
     public IgniteFuture<List<FullPageId>> verifyPartitions() {
         FilePageStoreManager pageStoreManager = filePageStoreManager(ctx);
 

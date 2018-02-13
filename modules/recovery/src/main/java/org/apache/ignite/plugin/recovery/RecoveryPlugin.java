@@ -7,7 +7,7 @@ import org.apache.ignite.plugin.IgnitePlugin;
 
 public interface RecoveryPlugin extends IgnitePlugin {
     /** */
-    public static final String PLUGIN_NAME = "GridGain";
+    public static final String PLUGIN_NAME = "DG_RECOVERY";
 
     public RecoveryConfiguration configuration();
 
