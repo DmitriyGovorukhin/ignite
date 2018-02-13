@@ -116,9 +116,6 @@ public class RecoveryProcessor {
 
                             PageIO.setCrc(buf, 0);
 
-                            if (crcSaved == -42)
-                                System.out.println("-42");
-
                             int currCrc = PureJavaCrc32.calcCrc32(buf, pageSize);
 
                             if (currCrc != crcSaved)
