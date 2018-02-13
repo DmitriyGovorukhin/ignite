@@ -1,11 +1,13 @@
 package org.apache.ignite.plugin.recovery;
 
 import java.io.Serializable;
+import java.util.List;
 import java.util.UUID;
 import org.apache.ignite.IgniteCheckedException;
 import org.apache.ignite.cluster.ClusterNode;
 import org.apache.ignite.configuration.IgniteConfiguration;
 import org.apache.ignite.internal.IgniteEx;
+import org.apache.ignite.internal.pagemem.FullPageId;
 import org.apache.ignite.lang.IgniteFuture;
 import org.apache.ignite.plugin.CachePluginContext;
 import org.apache.ignite.plugin.CachePluginProvider;
@@ -64,6 +66,10 @@ public class RecoveryPluginProvider implements PluginProvider<RecoveryConfigurat
 
             @Override public IgniteFuture<?> restoreDatabase() {
                 return recoveryProcessor.restoreDataBase();
+            }
+
+            @Override public IgniteFuture<List<FullPageId>> checkCrc() {
+                return recoveryProcessor.verifyPartitions();
             }
         };
     }
