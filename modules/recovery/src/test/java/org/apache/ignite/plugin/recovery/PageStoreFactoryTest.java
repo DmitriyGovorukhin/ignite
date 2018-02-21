@@ -1,6 +1,5 @@
 package org.apache.ignite.plugin.recovery;
 
-
 import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.util.HashSet;
@@ -15,10 +14,12 @@ import org.apache.ignite.plugin.recovery.store.PageStoreFactory;
 import static java.nio.ByteBuffer.allocate;
 
 public class PageStoreFactoryTest extends TestCase {
+    private static final String FILE = "/path/";
+
     public void test() throws IOException {
         PageStoreFactory pageStoreFactory = PageStoreFactory.create();
 
-        PageStore store = pageStoreFactory.createStore("/{path}/");
+        PageStore store = pageStoreFactory.createStore(FILE);
 
         int pageSize = store.pageSize();
 

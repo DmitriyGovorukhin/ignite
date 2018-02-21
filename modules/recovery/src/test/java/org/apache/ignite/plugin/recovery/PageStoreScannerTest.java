@@ -16,5 +16,9 @@ public class PageStoreScannerTest extends TestCase {
         pageStoreScanner.addElement(pagesByType);
 
         pageStoreScanner.scan();
+
+        System.out.println("Pages by type");
+
+        pagesByType.pagesByType().forEach((k, v) -> System.out.println(k + " - " + v));
     }
 }
