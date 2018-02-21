@@ -1,4 +1,4 @@
-package org.apache.ignite.plugin.recovery;
+package org.apache.ignite.plugin.recovery.store;
 
 import java.io.File;
 import java.io.IOException;

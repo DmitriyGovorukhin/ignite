@@ -8,6 +8,9 @@ import java.util.Set;
 import junit.framework.TestCase;
 import org.apache.ignite.internal.processors.cache.persistence.tree.io.PageIO;
 import org.apache.ignite.internal.processors.cache.persistence.wal.crc.PureJavaCrc32;
+import org.apache.ignite.plugin.recovery.store.PageIterator;
+import org.apache.ignite.plugin.recovery.store.PageStore;
+import org.apache.ignite.plugin.recovery.store.PageStoreFactory;
 
 import static java.nio.ByteBuffer.allocate;
 

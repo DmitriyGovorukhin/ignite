@@ -1,4 +1,4 @@
-package org.apache.ignite.plugin.recovery;
+package org.apache.ignite.plugin.recovery.store;
 
 import java.io.IOException;
 import org.apache.ignite.internal.processors.cache.persistence.file.RandomAccessFileIOFactory;
