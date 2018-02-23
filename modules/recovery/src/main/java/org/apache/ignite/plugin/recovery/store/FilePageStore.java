@@ -26,8 +26,8 @@ public class FilePageStore implements PageStore {
         this.file = file;
         this.fileIO = factory.create(file, StandardOpenOption.READ);
         this.length = file.length();
-        this.headerSize = 0;
-        this.pageSize = 0;
+        this.headerSize = 4096;
+        this.pageSize = 4096;
         this.corrupted = (length - headerSize) % pageSize != 0;
     }
 

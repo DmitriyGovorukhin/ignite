@@ -3,6 +3,7 @@ package org.apache.ignite.plugin.recovery.scan.elements;
 import java.nio.ByteBuffer;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.concurrent.atomic.AtomicLong;
 import org.apache.ignite.internal.processors.cache.persistence.tree.io.PageIO;
 import org.apache.ignite.plugin.recovery.scan.ScanElement;
 

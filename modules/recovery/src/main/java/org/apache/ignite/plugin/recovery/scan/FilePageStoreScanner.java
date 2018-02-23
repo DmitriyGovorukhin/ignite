@@ -2,6 +2,7 @@ package org.apache.ignite.plugin.recovery.scan;
 
 import java.io.IOException;
 import java.nio.ByteBuffer;
+import java.nio.ByteOrder;
 import java.util.LinkedList;
 import java.util.List;
 import org.apache.ignite.plugin.recovery.store.PageIterator;
@@ -27,19 +28,28 @@ public class FilePageStoreScanner implements PageStoreScanner {
 
         ByteBuffer buf = ByteBuffer.allocate(pageSize);
 
+        buf.order(ByteOrder.nativeOrder());
+
         ByteBuffer tmp = ByteBuffer.allocate(pageSize);
+
+        tmp.order(ByteOrder.nativeOrder());
 
         while (it.hasNext()) {
             it.next(buf);
 
+            buf.flip();
+
             for (ScanElement e : scanElements) {
                 tmp.put(buf);
+
+                tmp.rewind();
 
                 e.onNextPage(tmp);
 
                 tmp.clear();
             }
 
+            buf.clear();
         }
     }
 }
