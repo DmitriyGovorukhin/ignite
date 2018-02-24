@@ -5,4 +5,6 @@ import java.nio.ByteBuffer;
 public interface ScanElement {
 
     void onNextPage(ByteBuffer buf);
+
+    void onComplete();
 }

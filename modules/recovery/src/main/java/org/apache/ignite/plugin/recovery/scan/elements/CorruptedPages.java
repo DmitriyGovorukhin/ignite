@@ -5,9 +5,8 @@ import java.util.HashSet;
 import java.util.Set;
 import org.apache.ignite.internal.processors.cache.persistence.tree.io.PageIO;
 import org.apache.ignite.internal.processors.cache.persistence.wal.crc.PureJavaCrc32;
-import org.apache.ignite.plugin.recovery.scan.ScanElement;
 
-public class CorruptedPages implements ScanElement {
+public class CorruptedPages extends ScanAdapter {
 
     private final Set<Long> corruptedPages = new HashSet<>();
 
@@ -25,6 +24,8 @@ public class CorruptedPages implements ScanElement {
         if (crc != currCrc)
             corruptedPages.add(pageId);
     }
+
+
 
     public Set<Long> corruptedPages() {
         return corruptedPages;

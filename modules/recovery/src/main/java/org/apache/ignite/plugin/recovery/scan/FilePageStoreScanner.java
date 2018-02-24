@@ -14,7 +14,7 @@ public class FilePageStoreScanner implements PageStoreScanner {
 
     private final PageStore pageStore;
 
-    public FilePageStoreScanner(PageStore pageStore){
+    public FilePageStoreScanner(PageStore pageStore) {
         this.pageStore = pageStore;
     }
 
@@ -52,6 +52,9 @@ public class FilePageStoreScanner implements PageStoreScanner {
 
             buf.clear();
         }
+
+        for (ScanElement e : scanElements)
+            e.onComplete();
 
         GridUnsafe.freeBuffer(tmp);
     }

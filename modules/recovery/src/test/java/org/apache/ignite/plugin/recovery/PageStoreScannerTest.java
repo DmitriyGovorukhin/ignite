@@ -1,6 +1,7 @@
 package org.apache.ignite.plugin.recovery;
 
 import java.io.IOException;
+import java.util.Random;
 import java.util.Set;
 import org.apache.ignite.Ignite;
 import org.apache.ignite.IgniteCache;
@@ -50,12 +51,19 @@ public class PageStoreScannerTest {
 
         ig.cluster().active(true);
 
-        IgniteCache<Integer, String> cache = ig.cache("cache");
+        IgniteCache<Integer, byte[]> cache = ig.cache("cache");
 
-        for (int i = 100; i < 110; i++)
-            cache.put(i, "fasfdgtrgascnjmkiul9ojhrthuk89o89eg" + i);
+        Random rnd = new Random();
 
-        // cache.get(100);
+        for (int i = 100; i < 101; i++) {
+            byte[] bytes = new byte[4096 + 2048];
+
+            rnd.nextBytes(bytes);
+
+            cache.put(i, bytes);
+        }
+
+        cache.get(100);
 
         ig.cluster().active(false);
 

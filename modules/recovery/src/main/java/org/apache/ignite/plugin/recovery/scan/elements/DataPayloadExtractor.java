@@ -1,6 +1,7 @@
 package org.apache.ignite.plugin.recovery.scan.elements;
 
 import java.nio.ByteBuffer;
+import java.nio.ByteOrder;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
@@ -15,16 +16,14 @@ import org.apache.ignite.internal.processors.cache.persistence.tree.io.CacheVers
 import org.apache.ignite.internal.processors.cache.persistence.tree.io.DataPageIO;
 import org.apache.ignite.internal.processors.cache.persistence.tree.io.DataPagePayload;
 import org.apache.ignite.internal.processors.cache.persistence.tree.io.PageIO;
-import org.apache.ignite.internal.util.typedef.T2;
-import org.apache.ignite.plugin.recovery.scan.ScanElement;
 import sun.nio.ch.DirectBuffer;
 
-public class DataPayloadExtractor implements ScanElement {
+public class DataPayloadExtractor extends ScanAdapter {
     private final int pageSize = 4096;
 
     private final Set<KeyValue> objects = new HashSet<>();
 
-    private final Map<T2<Long, Integer>, ObjectExtractor> fragments = new HashMap<>();
+    private final Map<Long, ObjectExtractor> fragments = new HashMap<>();
 
     @Override public void onNextPage(ByteBuffer buf) {
         if (PageIO.getType(buf) != PageIO.T_DATA)
@@ -45,36 +44,41 @@ public class DataPayloadExtractor implements ScanElement {
 
             long nextLink = payload.nextLink();
 
-            if (nextLink != 0) {
-                buf.position(payload.offset());
-                buf.limit(payload.offset() + payload.payloadSize());
+            long link = PageIdUtils.link(pageId, i);
 
-                readFragment(buf, pageId, i, nextLink);
+            ObjectExtractor objectExtractor = fragments.get(link);
+
+            if (objectExtractor == null)
+                fragments.put(link, objectExtractor = new ObjectExtractor());
+
+            byte[] bytes = PageUtils.getBytes(payloadPtr, 0, payload.payloadSize());
+
+            Frame frame = new Frame(link, bytes, nextLink);
+
+            if (nextLink != 0) {
+                ObjectExtractor objectExtractorNext = fragments.remove(nextLink);
+
+                if (objectExtractorNext != null)
+                    objectExtractor.merge(objectExtractorNext);
+                else
+                    fragments.put(nextLink, objectExtractor);
             }
-            else
-                readFull(payloadPtr);
+
+            objectExtractor.onNextFrame(frame);
+
+            if (items > 1)
+                if (objectExtractor.checkChain()) {
+                    onObjectRead(objectExtractor.toKeyValue());
+
+                    fragments.remove(link);
+                    fragments.remove(nextLink);
+                }
         }
     }
 
-    private void readFragment(ByteBuffer buf, long pageId, int item, long nextLink) {
-        ObjectExtractor obj = fragments.get(new T2<>(pageId, item));
-
-        if (obj == null)
-            obj = new ObjectExtractor();
-
-        obj.read(buf);
-
-        if (nextLink != 0) {
-            long nextPageId = PageIdUtils.pageId(nextLink);
-            int nextItemId = PageIdUtils.itemId(nextLink);
-
-            fragments.put(new T2<>(nextPageId, nextItemId), obj);
-        }
-        else {
-            assert obj.isReady() : "object not fully read";
-
+    @Override public void onComplete() {
+        for (ObjectExtractor obj : fragments.values())
             onObjectRead(obj.toKeyValue());
-        }
     }
 
     private void readFull(long payloadPtr) {
@@ -129,6 +133,10 @@ public class DataPayloadExtractor implements ScanElement {
         private IncompleteCacheObject value;
 
         private IncompleteObject ver;
+
+        private Frame head;
+
+        private int len;
 
         private void read(ByteBuffer buf) {
             if (key == null)
@@ -189,8 +197,101 @@ public class DataPayloadExtractor implements ScanElement {
             return key.isReady() && value.isReady();
         }
 
+        public void onNextFrame(Frame frame) {
+            if (head == null)
+                head = frame;
+            else {
+                if (head.nextLink == frame.link)
+                    head.next = frame;
+                else if (frame.nextLink == head.link) {
+                    frame.next = head;
+
+                    head = frame;
+                }
+            }
+        }
+
+        private boolean checkChain() {
+            Frame frame = head;
+
+            int len = 0;
+
+            while (true) {
+                len += frame.payload.length;
+
+                if (frame.nextLink == 0) {
+                    this.len = len;
+
+                    return true;
+                }
+
+                frame = frame.next;
+
+                if (frame == null)
+                    return false;
+            }
+        }
+
+        public void merge(ObjectExtractor objectExtractor) {
+            if (head == null)
+                head = objectExtractor.head;
+            else {
+                if (head.nextLink == objectExtractor.head.link)
+                    head.next = objectExtractor.head;
+                else if (objectExtractor.head.nextLink == head.link) {
+                    objectExtractor.head = head;
+
+                    head = objectExtractor.head;
+                }
+            }
+        }
+
         private KeyValue toKeyValue() {
+            if (!checkChain())
+                return null;
+
+            ByteBuffer buf = ByteBuffer.allocate(len);
+
+            buf.order(ByteOrder.nativeOrder());
+
+            Frame frame = head;
+
+            while (true) {
+                buf.put(frame.payload);
+
+                if (frame.nextLink == 0)
+                    break;
+
+                frame = frame.next;
+            }
+
+            buf.flip();
+
+            assert buf.remaining() == len;
+
+            read(buf);
+
             return new KeyValue(key.type(), key.data(), value.type(), value.data());
+        }
+    }
+
+    /**
+     *
+     */
+    private static class Frame {
+
+        private final long link;
+
+        private final byte[] payload;
+
+        private final long nextLink;
+
+        private Frame next;
+
+        private Frame(long link, byte[] payload, long nextLink) {
+            this.link = link;
+            this.payload = payload;
+            this.nextLink = nextLink;
         }
     }
 
