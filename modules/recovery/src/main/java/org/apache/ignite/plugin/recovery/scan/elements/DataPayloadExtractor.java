@@ -2,6 +2,7 @@ package org.apache.ignite.plugin.recovery.scan.elements;
 
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
@@ -16,6 +17,7 @@ import org.apache.ignite.internal.processors.cache.persistence.tree.io.CacheVers
 import org.apache.ignite.internal.processors.cache.persistence.tree.io.DataPageIO;
 import org.apache.ignite.internal.processors.cache.persistence.tree.io.DataPagePayload;
 import org.apache.ignite.internal.processors.cache.persistence.tree.io.PageIO;
+import org.apache.ignite.internal.util.GridUnsafe;
 import sun.nio.ch.DirectBuffer;
 
 public class DataPayloadExtractor extends ScanAdapter {
@@ -58,13 +60,19 @@ public class DataPayloadExtractor extends ScanAdapter {
             if (nextLink != 0) {
                 ObjectExtractor objectExtractorNext = fragments.remove(nextLink);
 
-                if (objectExtractorNext != null)
-                    objectExtractor.merge(objectExtractorNext);
-                else
-                    fragments.put(nextLink, objectExtractor);
-            }
+                if (objectExtractorNext != null){
+                    objectExtractorNext.onNextFrame(frame);
 
-            objectExtractor.onNextFrame(frame);
+                    objectExtractor.merge(objectExtractorNext);
+                }
+                else{
+                    objectExtractor.onNextFrame(frame);
+
+                    fragments.put(nextLink, objectExtractor);
+                }
+            }
+            else
+                objectExtractor.onNextFrame(frame);
 
             if (items > 1)
                 if (objectExtractor.checkChain()) {
@@ -79,38 +87,6 @@ public class DataPayloadExtractor extends ScanAdapter {
     @Override public void onComplete() {
         for (ObjectExtractor obj : fragments.values())
             onObjectRead(obj.toKeyValue());
-    }
-
-    private void readFull(long payloadPtr) {
-        int off = 0;
-
-        // Read key.
-        int keyLen = PageUtils.getInt(payloadPtr, off);
-
-        off += 4;
-
-        byte keyType = PageUtils.getByte(payloadPtr, off);
-
-        off++;
-
-        byte[] key = PageUtils.getBytes(payloadPtr, off, keyLen);
-
-        off += keyLen;
-
-        //Read value.
-        int valueLen = PageUtils.getInt(payloadPtr, off);
-
-        off += 4;
-
-        byte valueType = PageUtils.getByte(payloadPtr, off);
-
-        off++;
-
-        byte[] value = PageUtils.getBytes(payloadPtr, off, valueLen);
-
-        off += keyLen;
-
-        onObjectRead(new KeyValue(keyType, key, valueType, value));
     }
 
     private void onObjectRead(KeyValue keyValue) {
@@ -250,28 +226,69 @@ public class DataPayloadExtractor extends ScanAdapter {
             if (!checkChain())
                 return null;
 
-            ByteBuffer buf = ByteBuffer.allocate(len);
+            ByteBuffer buf = GridUnsafe.allocateBuffer(len);
 
             buf.order(ByteOrder.nativeOrder());
 
-            Frame frame = head;
+            try {
+                Frame frame = head;
 
-            while (true) {
-                buf.put(frame.payload);
+                while (true) {
+                    buf.put(frame.payload);
 
-                if (frame.nextLink == 0)
-                    break;
+                    if (frame.nextLink == 0)
+                        break;
 
-                frame = frame.next;
+                    frame = frame.next;
+                }
+
+                buf.flip();
+
+                assert buf.remaining() == len;
+
+                if (head.next == null)
+                    return readFull(((DirectBuffer)buf).address());
+                else {
+                    read(buf);
+
+                    return new KeyValue(key.type(), key.data(), value.type(), value.data());
+                }
             }
+            finally {
+                GridUnsafe.freeBuffer(buf);
+            }
+        }
 
-            buf.flip();
+        private KeyValue readFull(long payloadPtr) {
+            int off = 0;
 
-            assert buf.remaining() == len;
+            // Read key.
+            int keyLen = PageUtils.getInt(payloadPtr, off);
 
-            read(buf);
+            off += 4;
 
-            return new KeyValue(key.type(), key.data(), value.type(), value.data());
+            byte keyType = PageUtils.getByte(payloadPtr, off);
+
+            off++;
+
+            byte[] key = PageUtils.getBytes(payloadPtr, off, keyLen);
+
+            off += keyLen;
+
+            //Read value.
+            int valueLen = PageUtils.getInt(payloadPtr, off);
+
+            off += 4;
+
+            byte valueType = PageUtils.getByte(payloadPtr, off);
+
+            off++;
+
+            byte[] value = PageUtils.getBytes(payloadPtr, off, valueLen);
+
+            off += keyLen;
+
+            return new KeyValue(keyType, key, valueType, value);
         }
     }
 
@@ -315,6 +332,31 @@ public class DataPayloadExtractor extends ScanAdapter {
             this.keyBytes = keyBytes;
             this.valType = valType;
             this.valBytes = valBytes;
+        }
+
+        @Override public boolean equals(Object o) {
+            if (this == o)
+                return true;
+            if (o == null || getClass() != o.getClass())
+                return false;
+
+            KeyValue value = (KeyValue)o;
+
+            if (keyType != value.keyType)
+                return false;
+            if (valType != value.valType)
+                return false;
+            if (!Arrays.equals(keyBytes, value.keyBytes))
+                return false;
+            return Arrays.equals(valBytes, value.valBytes);
+        }
+
+        @Override public int hashCode() {
+            int result = (int)keyType;
+            result = 31 * result + Arrays.hashCode(keyBytes);
+            result = 31 * result + (int)valType;
+            result = 31 * result + Arrays.hashCode(valBytes);
+            return result;
         }
     }
 }

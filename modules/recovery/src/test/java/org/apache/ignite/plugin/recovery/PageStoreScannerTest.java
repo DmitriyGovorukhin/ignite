@@ -1,6 +1,8 @@
 package org.apache.ignite.plugin.recovery;
 
 import java.io.IOException;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Random;
 import java.util.Set;
 import org.apache.ignite.Ignite;
@@ -55,15 +57,23 @@ public class PageStoreScannerTest {
 
         Random rnd = new Random();
 
-        for (int i = 100; i < 101; i++) {
-            byte[] bytes = new byte[4096 + 2048];
+        int keys = 50;
+
+        int maxLen = (4096 + 2048) * 3;
+
+        List<Integer> lens = new ArrayList<>(keys);
+
+        for (int i = 0; i < keys; i++) {
+            byte[] bytes = new byte[rnd.nextInt(maxLen)];
 
             rnd.nextBytes(bytes);
 
             cache.put(i, bytes);
+
+            lens.add(bytes.length);
         }
 
-        cache.get(100);
+        lens.forEach(System.out::println);
 
         ig.cluster().active(false);
 

@@ -41,7 +41,9 @@ public class IncompleteCacheObject extends IncompleteObject<CacheObject> {
      */
     public IncompleteCacheObject(final ByteBuffer buf) {
         if (buf.remaining() >= HEAD_LEN) {
-            data = new byte[buf.getInt()];
+            int len = buf.getInt();
+
+            data = new byte[len];
             type = buf.get();
         }
         // We cannot fully read head to initialize data buffer.
@@ -51,7 +53,7 @@ public class IncompleteCacheObject extends IncompleteObject<CacheObject> {
     }
 
     /** {@inheritDoc} */
-    public void readData(ByteBuffer buf) {
+    @Override public void readData(ByteBuffer buf) {
         if (data == null) {
             assert head != null;
 
