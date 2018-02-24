@@ -50,12 +50,12 @@ public class PageStoreScannerTest {
 
         ig.cluster().active(true);
 
-        IgniteCache<Integer, Long> cache = ig.cache("cache");
+        IgniteCache<Integer, String> cache = ig.cache("cache");
 
         for (int i = 100; i < 110; i++)
-            cache.put(i, (long)-i);
+            cache.put(i, "fasfdgtrgascnjmkiul9ojhrthuk89o89eg" + i);
 
-       // cache.get(100);
+        // cache.get(100);
 
         ig.cluster().active(false);
 

@@ -5,8 +5,13 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
+import org.apache.ignite.IgniteCheckedException;
+import org.apache.ignite.IgniteException;
 import org.apache.ignite.internal.pagemem.PageIdUtils;
 import org.apache.ignite.internal.pagemem.PageUtils;
+import org.apache.ignite.internal.processors.cache.IncompleteCacheObject;
+import org.apache.ignite.internal.processors.cache.IncompleteObject;
+import org.apache.ignite.internal.processors.cache.persistence.tree.io.CacheVersionIO;
 import org.apache.ignite.internal.processors.cache.persistence.tree.io.DataPageIO;
 import org.apache.ignite.internal.processors.cache.persistence.tree.io.DataPagePayload;
 import org.apache.ignite.internal.processors.cache.persistence.tree.io.PageIO;
@@ -19,7 +24,7 @@ public class DataPayloadExtractor implements ScanElement {
 
     private final Set<KeyValue> objects = new HashSet<>();
 
-    private final Map<T2<Long, Integer>, IncompleteObject> fragments = new HashMap<>();
+    private final Map<T2<Long, Integer>, ObjectExtractor> fragments = new HashMap<>();
 
     @Override public void onNextPage(ByteBuffer buf) {
         if (PageIO.getType(buf) != PageIO.T_DATA)
@@ -35,8 +40,6 @@ public class DataPayloadExtractor implements ScanElement {
 
         for (int i = 0; i < items; i++) {
             DataPagePayload payload = io.readPayload(ptr, i, pageSize);
-
-            int off = 0;
 
             long payloadPtr = ptr + payload.offset();
 
@@ -54,15 +57,24 @@ public class DataPayloadExtractor implements ScanElement {
     }
 
     private void readFragment(ByteBuffer buf, long pageId, int item, long nextLink) {
-        long nextPageId = PageIdUtils.pageId(nextLink);
-        int nextItemId = PageIdUtils.itemId(nextLink);
+        ObjectExtractor obj = fragments.get(new T2<>(pageId, item));
 
-        IncompleteObject obj = fragments.get(new T2<>(pageId, item));
+        if (obj == null)
+            obj = new ObjectExtractor();
 
-        if (obj == null) {
+        obj.read(buf);
 
+        if (nextLink != 0) {
+            long nextPageId = PageIdUtils.pageId(nextLink);
+            int nextItemId = PageIdUtils.itemId(nextLink);
+
+            fragments.put(new T2<>(nextPageId, nextItemId), obj);
         }
+        else {
+            assert obj.isReady() : "object not fully read";
 
+            onObjectRead(obj.toKeyValue());
+        }
     }
 
     private void readFull(long payloadPtr) {
@@ -90,7 +102,7 @@ public class DataPayloadExtractor implements ScanElement {
 
         off++;
 
-        byte[] value = PageUtils.getBytes(payloadPtr, off, keyLen);
+        byte[] value = PageUtils.getBytes(payloadPtr, off, valueLen);
 
         off += keyLen;
 
@@ -105,13 +117,86 @@ public class DataPayloadExtractor implements ScanElement {
         return new HashSet<>(objects);
     }
 
-    private class IncompleteObject {
+    /**
+     *
+     */
+    private static class ObjectExtractor {
+
+        private IncompleteCacheObject key;
+
+        private IncompleteObject expireTime;
+
+        private IncompleteCacheObject value;
+
+        private IncompleteObject ver;
 
         private void read(ByteBuffer buf) {
+            if (key == null)
+                key = new IncompleteCacheObject(buf);
 
+            key.readData(buf);
+
+            if (!key.isReady())
+                return;
+
+            if (expireTime == null) {
+                int remaining = buf.remaining();
+
+                if (remaining == 0)
+                    return;
+
+                int size = 8;
+
+                expireTime = new IncompleteObject(new byte[size]);
+            }
+
+            expireTime.readData(buf);
+
+            if (!expireTime.isReady())
+                return;
+
+            if (value == null)
+                value = new IncompleteCacheObject(buf);
+
+            value.readData(buf);
+
+            if (!value.isReady())
+                return;
+
+            if (ver == null) {
+                int remaining = buf.remaining();
+
+                if (remaining == 0)
+                    return;
+
+                try {
+                    int size = CacheVersionIO.readSize(buf, false);
+
+                    ver = new IncompleteObject(new byte[size]);
+                }
+                catch (IgniteCheckedException e) {
+                    throw new IgniteException(e);
+                }
+            }
+
+            ver.readData(buf);
+
+            if (!ver.isReady())
+                return;
+        }
+
+        public boolean isReady() {
+            return key.isReady() && value.isReady();
+        }
+
+        private KeyValue toKeyValue() {
+            return new KeyValue(key.type(), key.data(), value.type(), value.data());
         }
     }
 
+    /**
+     *
+     */
     public static class KeyValue {
         public final byte keyType;
         public final byte[] keyBytes;
