@@ -5,6 +5,7 @@ import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
 import java.util.LinkedList;
 import java.util.List;
+import org.apache.ignite.internal.util.GridUnsafe;
 import org.apache.ignite.plugin.recovery.store.PageIterator;
 import org.apache.ignite.plugin.recovery.store.PageStore;
 
@@ -30,7 +31,7 @@ public class FilePageStoreScanner implements PageStoreScanner {
 
         buf.order(ByteOrder.nativeOrder());
 
-        ByteBuffer tmp = ByteBuffer.allocate(pageSize);
+        ByteBuffer tmp = GridUnsafe.allocateBuffer(pageSize);
 
         tmp.order(ByteOrder.nativeOrder());
 
@@ -51,5 +52,7 @@ public class FilePageStoreScanner implements PageStoreScanner {
 
             buf.clear();
         }
+
+        GridUnsafe.freeBuffer(tmp);
     }
 }

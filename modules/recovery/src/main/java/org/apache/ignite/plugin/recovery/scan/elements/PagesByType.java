@@ -22,6 +22,6 @@ public class PagesByType implements ScanElement {
     }
 
     public Map<Integer, Integer> pagesByType() {
-        return pagesByType;
+        return new HashMap<>(pagesByType);
     }
 }
