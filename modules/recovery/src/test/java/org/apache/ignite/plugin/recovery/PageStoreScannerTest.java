@@ -5,6 +5,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Random;
 import java.util.Set;
+import java.util.concurrent.atomic.AtomicLong;
 import org.apache.ignite.Ignite;
 import org.apache.ignite.IgniteCache;
 import org.apache.ignite.Ignition;
@@ -17,6 +18,8 @@ import org.apache.ignite.plugin.recovery.scan.PageStoreScanner;
 import org.apache.ignite.plugin.recovery.scan.elements.DataPayloadExtractor;
 import org.apache.ignite.plugin.recovery.scan.elements.PageCounter;
 import org.apache.ignite.plugin.recovery.scan.elements.PagesByType;
+import org.apache.ignite.plugin.recovery.store.PageStore;
+import org.apache.ignite.plugin.recovery.store.PageStoreFactory;
 import org.junit.Test;
 
 import static org.apache.ignite.plugin.recovery.utils.PageTypeMapping.strType;
@@ -82,7 +85,11 @@ public class PageStoreScannerTest {
 
     @Test
     public void test() throws IOException {
-        PageStoreScanner scanner = PageStoreScanner.create(FILE);
+        PageStoreFactory f = PageStoreFactory.create();
+
+        PageStore store = f.createStore(FILE);
+
+        PageStoreScanner scanner = PageStoreScanner.create(store);
 
         PageCounter pageCounter = new PageCounter();
 
@@ -90,9 +97,9 @@ public class PageStoreScannerTest {
 
         DataPayloadExtractor extractor = new DataPayloadExtractor();
 
-        scanner.addElement(pagesByType);
-        scanner.addElement(pageCounter);
-        scanner.addElement(extractor);
+        scanner.addHandler(pagesByType);
+        scanner.addHandler(pageCounter);
+        scanner.addHandler(extractor);
 
         scanner.scan();
 
@@ -104,10 +111,30 @@ public class PageStoreScannerTest {
 
         System.out.println("Page content (" + keyValueSet.size() + ")");
 
+        AtomicLong dataSize = new AtomicLong();
+
         keyValueSet.forEach(kv -> {
+            dataSize.addAndGet(kv.keyBytes.length);
+            dataSize.addAndGet(kv.valBytes.length);
+
             System.out.println(
                 "keyType:" + kv.keyType + " keyLen:" + kv.keyBytes.length +
                     " valueType:" + kv.valType + " valueLen:" + kv.valBytes.length);
         });
+
+        System.out.println("Total partition size:" + str((pageCounter.pages() * store.pageSize())));
+        System.out.println("Total data size:" + str(dataSize.get()));
+    }
+
+    private static long KB = 1024;
+    private static long MB = 1024 * 1024;
+
+    private String str(long bytes) {
+        long mbs = bytes / MB;
+
+        if (mbs > 0)
+            return mbs + "." + (bytes % MB) + "mb";
+
+        return String.valueOf(bytes);
     }
 }

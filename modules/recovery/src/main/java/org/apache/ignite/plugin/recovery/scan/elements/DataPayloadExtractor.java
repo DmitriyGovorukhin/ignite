@@ -2,6 +2,7 @@ package org.apache.ignite.plugin.recovery.scan.elements;
 
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -60,12 +61,12 @@ public class DataPayloadExtractor extends ScanAdapter {
             if (nextLink != 0) {
                 ObjectExtractor objectExtractorNext = fragments.remove(nextLink);
 
-                if (objectExtractorNext != null){
+                if (objectExtractorNext != null) {
                     objectExtractorNext.onNextFrame(frame);
 
                     objectExtractor.merge(objectExtractorNext);
                 }
-                else{
+                else {
                     objectExtractor.onNextFrame(frame);
 
                     fragments.put(nextLink, objectExtractor);
@@ -74,21 +75,15 @@ public class DataPayloadExtractor extends ScanAdapter {
             else
                 objectExtractor.onNextFrame(frame);
 
-            if (items > 1)
-                if (objectExtractor.checkChain()) {
-                    onObjectRead(objectExtractor.toKeyValue());
-
-                    fragments.remove(link);
-                    fragments.remove(nextLink);
-                }
+            if (items > 1 || payload.payloadSize() < 3800)
+                if (objectExtractor.checkChain())
+                    onObjectRead(objectExtractor.toKeyValue(fragments));
         }
     }
 
     @Override public void onComplete() {
-        for (ObjectExtractor obj : fragments.values())
-            onObjectRead(obj.toKeyValue());
-
-        fragments.clear();
+        for (ObjectExtractor obj :new ArrayList<>(fragments.values()))
+            onObjectRead(obj.toKeyValue(fragments));
     }
 
     private void onObjectRead(KeyValue keyValue) {
@@ -224,7 +219,7 @@ public class DataPayloadExtractor extends ScanAdapter {
             }
         }
 
-        private KeyValue toKeyValue() {
+        private KeyValue toKeyValue(Map<Long, ObjectExtractor> frames) {
             if (!checkChain())
                 return null;
 
@@ -237,6 +232,8 @@ public class DataPayloadExtractor extends ScanAdapter {
 
                 while (true) {
                     buf.put(frame.payload);
+
+                    frames.remove(frame.link);
 
                     if (frame.nextLink == 0)
                         break;

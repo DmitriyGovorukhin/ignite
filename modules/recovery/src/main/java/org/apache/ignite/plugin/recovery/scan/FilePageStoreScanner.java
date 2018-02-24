@@ -18,7 +18,7 @@ public class FilePageStoreScanner implements PageStoreScanner {
         this.pageStore = pageStore;
     }
 
-    @Override public void addElement(ScanElement e) {
+    @Override public void addHandler(ScanElement e) {
         scanElements.add(e);
     }
 
