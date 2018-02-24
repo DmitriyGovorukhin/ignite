@@ -87,6 +87,8 @@ public class DataPayloadExtractor extends ScanAdapter {
     @Override public void onComplete() {
         for (ObjectExtractor obj : fragments.values())
             onObjectRead(obj.toKeyValue());
+
+        fragments.clear();
     }
 
     private void onObjectRead(KeyValue keyValue) {

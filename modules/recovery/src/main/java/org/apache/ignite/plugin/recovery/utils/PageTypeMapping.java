@@ -14,13 +14,13 @@ public class PageTypeMapping {
         TYPE_TO_STRING.put(T_BPLUS_META, "b_plus_tree_meta");
         TYPE_TO_STRING.put(T_H2_REF_LEAF, "data");
         TYPE_TO_STRING.put(T_H2_REF_INNER, "data");
-        TYPE_TO_STRING.put(T_DATA_REF_INNER, "data");
+        TYPE_TO_STRING.put(T_DATA_REF_INNER, "data_ref_inner");
         TYPE_TO_STRING.put(T_DATA_REF_LEAF, "data_ref_leaf");
         TYPE_TO_STRING.put(T_METASTORE_INNER, "data");
         TYPE_TO_STRING.put(T_METASTORE_LEAF, "data");
         TYPE_TO_STRING.put(T_PENDING_REF_INNER, "data");
         TYPE_TO_STRING.put(T_PENDING_REF_LEAF, "data");
-        TYPE_TO_STRING.put(T_META, "data");
+        TYPE_TO_STRING.put(T_META, "meta");
         TYPE_TO_STRING.put(T_PAGE_LIST_META, "page_list_meta");
         TYPE_TO_STRING.put(T_PAGE_LIST_NODE, "page_list_node");
         TYPE_TO_STRING.put(T_PART_META, "part_meta");

@@ -57,9 +57,9 @@ public class PageStoreScannerTest {
 
         Random rnd = new Random();
 
-        int keys = 50;
+        int keys = 1000;
 
-        int maxLen = (4096 + 2048) * 3;
+        int maxLen = (4096 + 2048) * 17;
 
         List<Integer> lens = new ArrayList<>(keys);
 
