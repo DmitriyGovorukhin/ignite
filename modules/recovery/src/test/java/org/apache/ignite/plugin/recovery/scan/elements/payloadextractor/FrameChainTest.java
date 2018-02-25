@@ -2,6 +2,7 @@ package org.apache.ignite.plugin.recovery.scan.elements.payloadextractor;
 
 import java.util.LinkedList;
 import java.util.Map;
+import java.util.Set;
 import java.util.concurrent.atomic.AtomicInteger;
 import org.apache.ignite.internal.util.typedef.internal.U;
 import org.junit.Assert;
@@ -9,8 +10,6 @@ import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 
 public class FrameChainTest {
-
-    private final FrameChainBuilder frameChainBuilder = new FrameChainBuilder();
 
     @Test
     public void test() {
@@ -46,6 +45,8 @@ public class FrameChainTest {
     }
 
     private void doTest(LinkedList<Long> links) {
+        FrameChainBuilder frameChainBuilder = new FrameChainBuilder();
+
         StringBuilder sb = new StringBuilder();
 
         links.forEach(l -> {
@@ -63,17 +64,17 @@ public class FrameChainTest {
         for (Long link : links)
             frameChainBuilder.onNextFrame(link, link == links.size() ? headPayload : fakePayload, link == 1 ? 0 : link - 1);
 
-       // Set<Frame> chain = U.field(frameChainBuilder, "chainHeads");
+        Set<Frame> chain = U.field(frameChainBuilder, "chainHeads");
 
-        // Assertions.assertEquals(1, chain.size(), sb.toString());
+        Assertions.assertEquals(1, chain.size(), sb.toString());
 
         Map<Long, Frame> frames = U.field(frameChainBuilder, "frames");
 
-        Assert.assertEquals(sb.toString(), 1, frames.size());
+        Assert.assertEquals(sb.toString(), 0, frames.size());
 
-        Frame head = frames.values().iterator().next();
+        //Frame head = frames.values().iterator().next();
 
-        //Frame head = chain.iterator().next();
+        Frame head = chain.iterator().next();
 
         Frame next = head;
 
@@ -90,9 +91,5 @@ public class FrameChainTest {
 
             idx = next.link;
         }
-
-        //chain.clear();
-
-        frames.clear();
     }
 }

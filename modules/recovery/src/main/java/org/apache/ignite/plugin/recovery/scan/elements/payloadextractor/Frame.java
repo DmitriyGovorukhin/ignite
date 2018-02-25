@@ -9,6 +9,8 @@ public class Frame {
 
     Frame next;
 
+    Frame head;
+
     int len;
 
     Frame(long link, byte[] payload, long nextLink) {

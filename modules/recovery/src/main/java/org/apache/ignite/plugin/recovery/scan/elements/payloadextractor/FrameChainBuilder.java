@@ -18,12 +18,17 @@ public class FrameChainBuilder {
 
         Frame frame = new Frame(link, bytes, nextLink);
 
+        if (frame.payload.length < THRESHOLD)
+            frame.head = frame;
+
         if (waiter == null)
             frames.put(link, frame);
         else {
             waiter.next = frame;
 
             waiter.len += frame.len;
+
+            frame.head = waiter.head;
         }
 
         if (nextLink != 0) {
@@ -33,16 +38,47 @@ public class FrameChainBuilder {
                 frame.next = nextFrame;
 
                 frame.len += nextFrame.len;
+
+                if (frame.head != null) {
+                    Frame tmp = frame.next;
+
+                    while (true) {
+                        if (tmp == null)
+                            break;
+
+                        tmp.head = frame.head;
+
+                        if (tmp.nextLink == 0) {
+                            chainDone(frame.head);
+
+                            break;
+                        }
+
+                        tmp = tmp.next;
+                    }
+                }
             }
             else
                 frames.put(nextLink, frame);
         }
         else {
-            if (bytes.length < THRESHOLD) {
-                Frame head = frames.remove(link);
+            if (frame.head != null)
+                chainDone(frame.head);
+        }
+    }
 
-                chainHeads.add(head);
-            }
+    private void chainDone(Frame head) {
+        chainHeads.add(head);
+
+        Frame next = head;
+
+        while (true) {
+            if (next == null)
+                break;
+
+            frames.remove(next.link);
+
+            next = next.next;
         }
     }
 
