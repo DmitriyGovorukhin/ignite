@@ -2,8 +2,11 @@ package org.apache.ignite.plugin.recovery.scan.elements.payloadextractor;
 
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.Iterator;
+import java.util.LinkedList;
 import java.util.Map;
 import java.util.Set;
+import org.apache.ignite.internal.util.typedef.F;
 
 public class FrameChainBuilder {
 
@@ -45,7 +48,7 @@ public class FrameChainBuilder {
                         tmp.head = frame.head;
 
                         if (tmp.nextLink == 0) {
-                            chainDone(frame.head);
+                            chainDone(frame.head, true);
 
                             break;
                         }
@@ -59,30 +62,37 @@ public class FrameChainBuilder {
         }
         else {
             if (frame.head != null)
-                chainDone(frame.head);
+                chainDone(frame.head, true);
         }
     }
 
-    private void chainDone(Frame head) {
-       // assert head.nextLink != 0 && head.next != null;
+    private void chainDone(Frame head, boolean remove) {
+        // assert head.nextLink != 0 && head.next != null;
 
         chainHeads.add(head);
 
-        recursiveLen(head);
+        recursiveLen(head, remove);
     }
 
-    private int recursiveLen(Frame frame) {
-        frames.remove(frame.link);
+    private int recursiveLen(Frame frame, boolean remove) {
+        if (remove)
+            frames.remove(frame.link);
 
         if (frame.next == null)
             return frame.len = frame.payload.length;
 
-        frame.len += (frame.payload.length + recursiveLen(frame.next));
+        frame.len += (frame.payload.length + recursiveLen(frame.next, remove));
 
         return frame.len;
     }
 
     public Set<Frame> completelyChain() {
+        if (!frames.isEmpty()) {
+            for (Frame frame : frames.values())
+                chainDone(frame, false);
+
+            frames.clear();
+        }
         return new HashSet<>(chainHeads);
     }
 }
