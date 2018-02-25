@@ -7,7 +7,7 @@ import java.util.Set;
 
 public class FrameChainBuilder {
 
-    private static final int THRESHOLD = 3072;
+    public static final int THRESHOLD = 3072;
 
     private final Set<Frame> chainHeads = new HashSet<>();
 

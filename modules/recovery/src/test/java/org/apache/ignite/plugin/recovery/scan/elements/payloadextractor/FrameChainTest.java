@@ -1,6 +1,8 @@
 package org.apache.ignite.plugin.recovery.scan.elements.payloadextractor;
 
+import java.util.LinkedList;
 import java.util.Map;
+import java.util.concurrent.atomic.AtomicInteger;
 import org.apache.ignite.internal.util.typedef.internal.U;
 import org.junit.Assert;
 import org.junit.jupiter.api.Assertions;
@@ -14,54 +16,64 @@ public class FrameChainTest {
     public void test() {
         int links = 5;
 
-        int cnt = 0;
+        AtomicInteger cnt = new AtomicInteger();
 
-        for (int i = 1; i < links; i++) {
-            long link1 = i;
+        doTestRecursive(links, new LinkedList<>(), cnt);
 
-            for (int j = 1; j < links; j++) {
-                if (j == i)
-                    continue;
+        System.out.println("Total tests:" + cnt.get());
 
-                long link2 = j;
-
-                for (int k = 1; k < links; k++) {
-                    if (k == i || k == j)
-                        continue;
-
-                    long link3 = k;
-
-                    for (int m = 1; m < links; m++) {
-                        if (m == i || m == j || m == k)
-                            continue;
-
-                        long link4 = m;
-
-                        doTest(link1, link2, link3, link4);
-
-                        cnt++;
-                    }
-                }
-            }
-        }
-
-        Assertions.assertEquals(4 * 3 * 2, cnt);
+        Assertions.assertEquals(5 * 4 * 3 * 2, cnt.get());
     }
 
-    private void doTest(long link1, long link2, long link3, long link4) {
-        frameChainBuilder.onNextFrame(link1, null, link1 == 1 ? 0 : link1 - 1);
+    private void doTestRecursive(long totalLinks, LinkedList<Long> links, AtomicInteger cnt) {
+        if (totalLinks == links.size()) {
+            doTest(links);
 
-        frameChainBuilder.onNextFrame(link2, null, link2 == 1 ? 0 : link2 - 1);
+            cnt.incrementAndGet();
 
-        frameChainBuilder.onNextFrame(link3, null, link3 == 1 ? 0 : link3 - 1);
+            return;
+        }
 
-        frameChainBuilder.onNextFrame(link4, null, link4 == 1 ? 0 : link4 - 1);
+        for (long i = 1; i <= totalLinks; i++) {
+            if (!links.contains(i)) {
+                links.add(i);
+
+                doTestRecursive(totalLinks, links, cnt);
+
+                links.removeLast();
+            }
+        }
+    }
+
+    private void doTest(LinkedList<Long> links) {
+        StringBuilder sb = new StringBuilder();
+
+        links.forEach(l -> {
+            sb.append(l);
+
+            if (!l.equals(links.getLast()))
+                sb.append(" -> ");
+        });
+
+        System.out.println(sb);
+
+        byte[] fakePayload = new byte[4000];
+        byte[] headPayload = new byte[2000];
+
+        for (Long link : links)
+            frameChainBuilder.onNextFrame(link, link == links.size() ? headPayload : fakePayload, link == 1 ? 0 : link - 1);
+
+       // Set<Frame> chain = U.field(frameChainBuilder, "chainHeads");
+
+        // Assertions.assertEquals(1, chain.size(), sb.toString());
 
         Map<Long, Frame> frames = U.field(frameChainBuilder, "frames");
 
-        Assert.assertEquals(link1 + " " + link2 + " " + link3 + " " + link4, 1, frames.size());
+        Assert.assertEquals(sb.toString(), 1, frames.size());
 
         Frame head = frames.values().iterator().next();
+
+        //Frame head = chain.iterator().next();
 
         Frame next = head;
 
@@ -78,6 +90,8 @@ public class FrameChainTest {
 
             idx = next.link;
         }
+
+        //chain.clear();
 
         frames.clear();
     }

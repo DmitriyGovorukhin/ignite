@@ -60,7 +60,7 @@ public class PageStoreScannerTest {
 
         ig.cluster().active(true);
 
-        IgniteCache<Integer, Integer> cache = ig.cache("cache");
+        IgniteCache<Integer, byte[]> cache = ig.cache("cache");
 
         Random rnd = new Random();
 
@@ -75,7 +75,7 @@ public class PageStoreScannerTest {
 
             rnd.nextBytes(bytes);
 
-            cache.put(i, i);
+            cache.put(i, bytes);
 
             lens.add(bytes.length);
         }
