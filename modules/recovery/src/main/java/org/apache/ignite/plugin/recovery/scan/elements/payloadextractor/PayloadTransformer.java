@@ -21,8 +21,6 @@ public class PayloadTransformer {
 
     private IncompleteObject ver;
 
-    private int len;
-
     private void read(ByteBuffer buf) {
         if (key == null)
             key = new IncompleteCacheObject(buf);
@@ -82,32 +80,9 @@ public class PayloadTransformer {
         return key.isReady() && value.isReady();
     }
 
-    private boolean checkChain(Frame head) {
-        Frame frame = head;
-
-        int len = 0;
-
-        while (true) {
-            len += frame.payload.length;
-
-            if (frame.nextLink == 0) {
-                this.len = len;
-
-                return true;
-            }
-
-            frame = frame.next;
-
-            if (frame == null)
-                return false;
-        }
-    }
 
     public KeyValue toKeyValue(Frame frame) {
-        if (!checkChain(frame))
-            return null;
-
-        ByteBuffer buf = GridUnsafe.allocateBuffer(len);
+        ByteBuffer buf = GridUnsafe.allocateBuffer(frame.len);
 
         buf.order(ByteOrder.nativeOrder());
 
@@ -125,7 +100,7 @@ public class PayloadTransformer {
 
             buf.flip();
 
-            assert buf.remaining() == len;
+            assert buf.remaining() == frame.len;
 
             if (frame.next == null)
                 return readFull(((DirectBuffer)buf).address());

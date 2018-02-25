@@ -17,7 +17,6 @@ public class Frame {
         this.link = link;
         this.payload = payload;
         this.nextLink = nextLink;
-        this.len = payload.length;
     }
 
     @Override public boolean equals(Object o) {

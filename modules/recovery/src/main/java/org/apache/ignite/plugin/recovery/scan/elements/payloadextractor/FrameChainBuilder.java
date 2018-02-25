@@ -26,8 +26,6 @@ public class FrameChainBuilder {
         else {
             waiter.next = frame;
 
-            waiter.len += frame.len;
-
             frame.head = waiter.head;
         }
 
@@ -36,8 +34,6 @@ public class FrameChainBuilder {
 
             if (nextFrame != null) {
                 frame.next = nextFrame;
-
-                frame.len += nextFrame.len;
 
                 if (frame.head != null) {
                     Frame tmp = frame.next;
@@ -70,16 +66,18 @@ public class FrameChainBuilder {
     private void chainDone(Frame head) {
         chainHeads.add(head);
 
-        Frame next = head;
+        recursiveLen(head);
+    }
 
-        while (true) {
-            if (next == null)
-                break;
+    private int recursiveLen(Frame frame) {
+        frames.remove(frame.link);
 
-            frames.remove(next.link);
+        if (frame.next == null)
+            return frame.len = frame.payload.length;
 
-            next = next.next;
-        }
+        frame.len += (frame.payload.length + recursiveLen(frame.next));
+
+        return frame.len;
     }
 
     public Set<Frame> completelyChain() {

@@ -5,15 +5,17 @@ import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.atomic.AtomicInteger;
 import org.apache.ignite.internal.util.typedef.internal.U;
-import org.junit.Assert;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
+
+import static org.junit.Assert.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
 public class FrameChainTest {
 
     @Test
     public void test() {
-        int links = 5;
+        int links = 8;
 
         AtomicInteger cnt = new AtomicInteger();
 
@@ -21,7 +23,7 @@ public class FrameChainTest {
 
         System.out.println("Total tests:" + cnt.get());
 
-        Assertions.assertEquals(5 * 4 * 3 * 2, cnt.get());
+        assertEquals(8 * 7 * 6 * 5 * 4 * 3 * 2, cnt.get());
     }
 
     private void doTestRecursive(long totalLinks, LinkedList<Long> links, AtomicInteger cnt) {
@@ -66,30 +68,37 @@ public class FrameChainTest {
 
         Set<Frame> chain = U.field(frameChainBuilder, "chainHeads");
 
-        Assertions.assertEquals(1, chain.size(), sb.toString());
+        assertEquals(1, chain.size(), sb.toString());
 
         Map<Long, Frame> frames = U.field(frameChainBuilder, "frames");
 
-        Assert.assertEquals(sb.toString(), 0, frames.size());
+        assertEquals(sb.toString(), 0, frames.size());
 
         //Frame head = frames.values().iterator().next();
 
         Frame head = chain.iterator().next();
 
-        Frame next = head;
+        Frame frame = head;
 
-        long idx = next.link;
+        long link = frame.link;
+
+        int idx = 1;
 
         while (true) {
-            Assertions.assertEquals(idx, next.link);
-            Assertions.assertEquals(idx - 1, next.nextLink);
+            Assertions.assertEquals(link, frame.link);
+            Assertions.assertEquals(link - 1, frame.nextLink);
 
-            next = next.next;
+            if (head == frame)
+                Assertions.assertEquals((link - 1) * fakePayload.length + headPayload.length, frame.len);
+            else
+                Assertions.assertEquals(link * fakePayload.length, frame.len);
 
-            if (next == null)
+            frame = frame.next;
+
+            if (frame == null)
                 break;
 
-            idx = next.link;
+            link = frame.link;
         }
     }
 }
