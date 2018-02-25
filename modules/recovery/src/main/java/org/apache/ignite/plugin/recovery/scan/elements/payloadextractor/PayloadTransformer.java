@@ -81,16 +81,16 @@ public class PayloadTransformer {
     }
 
 
-    public KeyValue toKeyValue(Frame frame) {
-        ByteBuffer buf = GridUnsafe.allocateBuffer(frame.len);
+    public KeyValue toKeyValue(Frame head) {
+        ByteBuffer buf = GridUnsafe.allocateBuffer(head.len);
 
         buf.order(ByteOrder.nativeOrder());
 
         try {
-            Frame frame0 = frame;
+            Frame frame = head;
 
             while (true) {
-                buf.put(frame0.payload);
+                buf.put(frame.payload);
 
                 if (frame.nextLink == 0)
                     break;
@@ -100,9 +100,9 @@ public class PayloadTransformer {
 
             buf.flip();
 
-            assert buf.remaining() == frame.len;
+            assert buf.remaining() == head.len;
 
-            if (frame.next == null)
+            if (head.next == null)
                 return readFull(((DirectBuffer)buf).address());
             else {
                 read(buf);

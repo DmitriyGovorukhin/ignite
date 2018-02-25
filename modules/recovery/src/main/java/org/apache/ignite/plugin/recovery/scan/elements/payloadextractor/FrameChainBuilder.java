@@ -7,7 +7,7 @@ import java.util.Set;
 
 public class FrameChainBuilder {
 
-    public static final int THRESHOLD = 3072;
+    public static final int THRESHOLD = 4030;
 
     private final Set<Frame> chainHeads = new HashSet<>();
 
@@ -64,6 +64,8 @@ public class FrameChainBuilder {
     }
 
     private void chainDone(Frame head) {
+        assert head.nextLink != 0 && head.next != null;
+
         chainHeads.add(head);
 
         recursiveLen(head);
