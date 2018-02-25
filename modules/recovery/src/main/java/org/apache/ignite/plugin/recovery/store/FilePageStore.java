@@ -41,7 +41,7 @@ public class FilePageStore implements PageStore {
 
     @Override public PageIterator iterator() {
         return new PageIterator() {
-            private int offset = headerSize;
+            private long offset = headerSize;
 
             @Override public boolean hasNext() {
                 return offset <= (length - pageSize);

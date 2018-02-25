@@ -64,7 +64,7 @@ public class FrameChainBuilder {
     }
 
     private void chainDone(Frame head) {
-        assert head.nextLink != 0 && head.next != null;
+       // assert head.nextLink != 0 && head.next != null;
 
         chainHeads.add(head);
 

@@ -1,14 +1,12 @@
 package org.apache.ignite.plugin.recovery;
 
 import java.io.IOException;
-import java.util.ArrayList;
-import java.util.HashSet;
-import java.util.List;
 import java.util.Random;
 import java.util.Set;
 import java.util.stream.Collectors;
 import org.apache.ignite.Ignite;
 import org.apache.ignite.IgniteCache;
+import org.apache.ignite.IgniteDataStreamer;
 import org.apache.ignite.Ignition;
 import org.apache.ignite.cache.affinity.rendezvous.RendezvousAffinityFunction;
 import org.apache.ignite.configuration.CacheConfiguration;
@@ -64,23 +62,30 @@ public class PageStoreScannerTest {
 
         Random rnd = new Random();
 
-        int keys = 1000;
+        int keys = 10_000;
 
         int maxLen = (4096 + 2048) * 17;
 
-        List<Integer> lens = new ArrayList<>(keys);
+        // List<Integer> lens = new ArrayList<>(keys);
 
-        for (int i = 0; i < keys; i++) {
-            byte[] bytes = new byte[rnd.nextInt(maxLen)];
+        try (IgniteDataStreamer<Integer, byte[]> st = ig.dataStreamer("cache")) {
+            st.allowOverwrite(true);
 
-            rnd.nextBytes(bytes);
+            for (int i = 0; i < keys; i++) {
+                byte[] bytes = new byte[rnd.nextInt(maxLen)];
 
-            cache.put(i, bytes);
+                rnd.nextBytes(bytes);
 
-            lens.add(bytes.length);
+                st.addData(i, bytes);
+
+                //lens.add(bytes.length);
+
+                if (i % 1000 == 0)
+                    System.out.println("loaded:" + i);
+            }
         }
 
-        lens.forEach(System.out::println);
+        // lens.forEach(System.out::println);
 
         ig.cluster().active(false);
 
@@ -105,7 +110,11 @@ public class PageStoreScannerTest {
         scanner.addHandler(pageCounter);
         scanner.addHandler(extractor);
 
+        long time = System.currentTimeMillis();
+
         scanner.scan();
+
+        System.out.println("Scan time: " + (System.currentTimeMillis() - time));
 
         System.out.println("Pages by type (" + pageCounter.pages() + ")");
 
