@@ -1,5 +1,6 @@
-package org.apache.ignite.plugin.recovery.scan.elements.payloadextractor;
+package org.apache.ignite.plugin.recovery.scan.elements;
 
+import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.Map;
 import java.util.Set;
@@ -23,7 +24,7 @@ public class FrameChainTest {
 
         System.out.println("Total tests:" + cnt.get());
 
-        assertEquals(8 * 7 * 6 * 5 * 4 * 3 * 2, cnt.get());
+        assertEquals( 8 * 7 * 6 * 5 * 4 * 3 * 2, cnt.get());
     }
 
     private void doTestRecursive(long totalLinks, LinkedList<Long> links, AtomicInteger cnt) {
@@ -47,7 +48,9 @@ public class FrameChainTest {
     }
 
     private void doTest(LinkedList<Long> links) {
-        FrameChainBuilder frameChainBuilder = new FrameChainBuilder();
+        Set<Frame> chains = new HashSet<>();
+
+        FrameChainBuilder frameChainBuilder = new FrameChainBuilder(chains::add);
 
         StringBuilder sb = new StringBuilder();
 
@@ -60,15 +63,13 @@ public class FrameChainTest {
 
         System.out.println(sb);
 
-        byte[] fakePayload = new byte[4000];
+        byte[] fakePayload = new byte[4030];
         byte[] headPayload = new byte[2000];
 
         for (Long link : links)
             frameChainBuilder.onNextFrame(link, link == links.size() ? headPayload : fakePayload, link == 1 ? 0 : link - 1);
 
-        Set<Frame> chain = U.field(frameChainBuilder, "chainHeads");
-
-        assertEquals(1, chain.size(), sb.toString());
+        assertEquals(1, chains.size(), sb.toString());
 
         Map<Long, Frame> frames = U.field(frameChainBuilder, "frames");
 
@@ -76,13 +77,11 @@ public class FrameChainTest {
 
         //Frame head = frames.values().iterator().next();
 
-        Frame head = chain.iterator().next();
+        Frame head = chains.iterator().next();
 
         Frame frame = head;
 
         long link = frame.link;
-
-        int idx = 1;
 
         while (true) {
             Assertions.assertEquals(link, frame.link);

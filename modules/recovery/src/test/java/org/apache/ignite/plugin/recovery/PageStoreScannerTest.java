@@ -1,9 +1,9 @@
 package org.apache.ignite.plugin.recovery;
 
 import java.io.IOException;
+import java.util.HashSet;
 import java.util.Random;
 import java.util.Set;
-import java.util.stream.Collectors;
 import org.apache.ignite.Ignite;
 import org.apache.ignite.IgniteCache;
 import org.apache.ignite.IgniteDataStreamer;
@@ -14,12 +14,11 @@ import org.apache.ignite.configuration.DataRegionConfiguration;
 import org.apache.ignite.configuration.DataStorageConfiguration;
 import org.apache.ignite.configuration.IgniteConfiguration;
 import org.apache.ignite.plugin.recovery.scan.PageStoreScanner;
+import org.apache.ignite.plugin.recovery.scan.elements.DataPayloadExtractor;
+import org.apache.ignite.plugin.recovery.scan.elements.KeyValue;
+import org.apache.ignite.plugin.recovery.scan.elements.KeyValueExtractor;
 import org.apache.ignite.plugin.recovery.scan.elements.PageCounter;
 import org.apache.ignite.plugin.recovery.scan.elements.PagesByType;
-import org.apache.ignite.plugin.recovery.scan.elements.payloadextractor.DataPayloadExtractor;
-import org.apache.ignite.plugin.recovery.scan.elements.payloadextractor.Frame;
-import org.apache.ignite.plugin.recovery.scan.elements.payloadextractor.KeyValue;
-import org.apache.ignite.plugin.recovery.scan.elements.payloadextractor.PayloadTransformer;
 import org.apache.ignite.plugin.recovery.store.PageStore;
 import org.apache.ignite.plugin.recovery.store.PageStoreFactory;
 import org.junit.Test;
@@ -104,11 +103,18 @@ public class PageStoreScannerTest {
 
         PagesByType pagesByType = new PagesByType();
 
-        DataPayloadExtractor extractor = new DataPayloadExtractor();
+        Set<byte[]> payloadSet = new HashSet<>();
+
+        DataPayloadExtractor payloadExtractor = new DataPayloadExtractor(payloadSet::add);
+
+        Set<KeyValue> keyValueSet = new HashSet<>();
+
+        KeyValueExtractor keyValueExtractor = new KeyValueExtractor(keyValueSet::add);
 
         scanner.addHandler(pagesByType);
         scanner.addHandler(pageCounter);
-        scanner.addHandler(extractor);
+        scanner.addHandler(payloadExtractor);
+        scanner.addHandler(keyValueExtractor);
 
         long time = System.currentTimeMillis();
 
@@ -120,17 +126,7 @@ public class PageStoreScannerTest {
 
         pagesByType.pagesByType().forEach((k, v) -> System.out.println(v + " - " + strType(k)));
 
-        Set<byte[]> payLoadSet = extractor.payLoadSet();
-
-        System.out.println("Payloads: " + payLoadSet.size());
-
-        Set<Frame> frames = extractor.frameSet();
-
-        Set<KeyValue> keyValueSet = frames.stream().map(frame -> {
-            PayloadTransformer payloadTransformer = new PayloadTransformer();
-
-            return payloadTransformer.toKeyValue(frame);
-        }).collect(Collectors.toSet());
+        System.out.println("Payloads: " + payloadSet.size());
 
         System.out.println("KeyValues: " + keyValueSet.size());
     }

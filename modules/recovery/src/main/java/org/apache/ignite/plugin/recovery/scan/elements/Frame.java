@@ -1,4 +1,4 @@
-package org.apache.ignite.plugin.recovery.scan.elements.payloadextractor;
+package org.apache.ignite.plugin.recovery.scan.elements;
 
 public class Frame {
     final long link;

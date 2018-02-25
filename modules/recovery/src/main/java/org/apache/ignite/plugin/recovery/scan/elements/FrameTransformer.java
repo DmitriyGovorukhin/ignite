@@ -1,4 +1,4 @@
-package org.apache.ignite.plugin.recovery.scan.elements.payloadextractor;
+package org.apache.ignite.plugin.recovery.scan.elements;
 
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
@@ -11,7 +11,7 @@ import org.apache.ignite.internal.processors.cache.persistence.tree.io.CacheVers
 import org.apache.ignite.internal.util.GridUnsafe;
 import sun.nio.ch.DirectBuffer;
 
-public class PayloadTransformer {
+public class FrameTransformer {
 
     private IncompleteCacheObject key;
 

@@ -1,20 +1,55 @@
-package org.apache.ignite.plugin.recovery.scan.elements.payloadextractor;
+package org.apache.ignite.plugin.recovery.scan.elements;
 
+import java.nio.ByteBuffer;
 import java.util.HashMap;
-import java.util.HashSet;
-import java.util.Iterator;
-import java.util.LinkedList;
 import java.util.Map;
-import java.util.Set;
-import org.apache.ignite.internal.util.typedef.F;
+import java.util.function.Consumer;
+import org.apache.ignite.internal.pagemem.PageIdUtils;
+import org.apache.ignite.internal.pagemem.PageUtils;
+import org.apache.ignite.internal.processors.cache.persistence.tree.io.DataPageIO;
+import org.apache.ignite.internal.processors.cache.persistence.tree.io.DataPagePayload;
+import org.apache.ignite.internal.processors.cache.persistence.tree.io.PageIO;
+import sun.nio.ch.DirectBuffer;
 
-public class FrameChainBuilder {
+public class FrameChainBuilder extends ScanAdapter {
+    private final int pageSize = 4096;
 
     public static final int THRESHOLD = 4030;
 
-    private final Set<Frame> chainHeads = new HashSet<>();
-
     private final Map<Long, Frame> frames = new HashMap<>();
+
+    private final Consumer<Frame> frameConsumer;
+
+    public FrameChainBuilder(Consumer<Frame> consumer) {
+        frameConsumer = consumer;
+    }
+
+    @Override public void onNextPage(ByteBuffer buf) {
+        if (PageIO.getType(buf) != PageIO.T_DATA)
+            return;
+
+        long ptr = ((DirectBuffer)buf).address();
+
+        DataPageIO io = DataPageIO.VERSIONS.forPage(ptr);
+
+        long pageId = PageIO.getPageId(ptr);
+
+        int items = io.getDirectCount(ptr);
+
+        for (int i = 0; i < items; i++) {
+            DataPagePayload payload = io.readPayload(ptr, i, pageSize);
+
+            long payloadPtr = ptr + payload.offset();
+
+            long nextLink = payload.nextLink();
+
+            long link = PageIdUtils.link(pageId, i);
+
+            byte[] bytes = PageUtils.getBytes(payloadPtr, 0, payload.payloadSize());
+
+            onNextFrame(link, bytes, nextLink);
+        }
+    }
 
     public void onNextFrame(long link, byte[] bytes, long nextLink) {
         Frame waiter = frames.remove(link);
@@ -69,9 +104,9 @@ public class FrameChainBuilder {
     private void chainDone(Frame head, boolean remove) {
         // assert head.nextLink != 0 && head.next != null;
 
-        chainHeads.add(head);
-
         recursiveLen(head, remove);
+
+        frameConsumer.accept(head);
     }
 
     private int recursiveLen(Frame frame, boolean remove) {
@@ -86,13 +121,14 @@ public class FrameChainBuilder {
         return frame.len;
     }
 
-    public Set<Frame> completelyChain() {
+    @Override public void onComplete() {
+        super.onComplete();
+
         if (!frames.isEmpty()) {
             for (Frame frame : frames.values())
                 chainDone(frame, false);
 
             frames.clear();
         }
-        return new HashSet<>(chainHeads);
     }
 }

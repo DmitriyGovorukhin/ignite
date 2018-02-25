@@ -1,4 +1,4 @@
-package org.apache.ignite.plugin.recovery.scan.elements.payloadextractor;
+package org.apache.ignite.plugin.recovery.scan.elements;
 
 public class KeyValue {
     public final byte keyType;
@@ -7,7 +7,12 @@ public class KeyValue {
     public final byte valueType;
     public final byte[] value;
 
-    public KeyValue(byte keyType, byte[] key, byte valueType, byte[] value) {
+    public KeyValue(
+        byte keyType,
+        byte[] key,
+        byte valueType,
+        byte[] value
+    ) {
         this.keyType = keyType;
         this.key = key;
         this.valueType = valueType;
