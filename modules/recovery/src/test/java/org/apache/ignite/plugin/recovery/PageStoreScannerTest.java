@@ -2,10 +2,11 @@ package org.apache.ignite.plugin.recovery;
 
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Random;
 import java.util.Set;
-import java.util.concurrent.atomic.AtomicLong;
+import java.util.stream.Collectors;
 import org.apache.ignite.Ignite;
 import org.apache.ignite.IgniteCache;
 import org.apache.ignite.Ignition;
@@ -15,9 +16,12 @@ import org.apache.ignite.configuration.DataRegionConfiguration;
 import org.apache.ignite.configuration.DataStorageConfiguration;
 import org.apache.ignite.configuration.IgniteConfiguration;
 import org.apache.ignite.plugin.recovery.scan.PageStoreScanner;
-import org.apache.ignite.plugin.recovery.scan.elements.DataPayloadExtractor;
 import org.apache.ignite.plugin.recovery.scan.elements.PageCounter;
 import org.apache.ignite.plugin.recovery.scan.elements.PagesByType;
+import org.apache.ignite.plugin.recovery.scan.elements.payloadextractor.DataPayloadExtractor;
+import org.apache.ignite.plugin.recovery.scan.elements.payloadextractor.Frame;
+import org.apache.ignite.plugin.recovery.scan.elements.payloadextractor.KeyValue;
+import org.apache.ignite.plugin.recovery.scan.elements.payloadextractor.PayloadTransformer;
 import org.apache.ignite.plugin.recovery.store.PageStore;
 import org.apache.ignite.plugin.recovery.store.PageStoreFactory;
 import org.junit.Test;
@@ -56,7 +60,7 @@ public class PageStoreScannerTest {
 
         ig.cluster().active(true);
 
-        IgniteCache<Integer, byte[]> cache = ig.cache("cache");
+        IgniteCache<Integer, Integer> cache = ig.cache("cache");
 
         Random rnd = new Random();
 
@@ -71,7 +75,7 @@ public class PageStoreScannerTest {
 
             rnd.nextBytes(bytes);
 
-            cache.put(i, bytes);
+            cache.put(i, i);
 
             lens.add(bytes.length);
         }
@@ -107,34 +111,18 @@ public class PageStoreScannerTest {
 
         pagesByType.pagesByType().forEach((k, v) -> System.out.println(v + " - " + strType(k)));
 
-        Set<DataPayloadExtractor.KeyValue> keyValueSet = extractor.keyValues();
+        Set<byte[]> payLoadSet = extractor.payLoadSet();
 
-        System.out.println("Page content (" + keyValueSet.size() + ")");
+        System.out.println("Payloads: " + payLoadSet.size());
 
-        AtomicLong dataSize = new AtomicLong();
+        Set<Frame> frames = extractor.frameSet();
 
-        keyValueSet.forEach(kv -> {
-            dataSize.addAndGet(kv.keyBytes.length);
-            dataSize.addAndGet(kv.valBytes.length);
+        Set<KeyValue> keyValueSet = frames.stream().map(frame -> {
+            PayloadTransformer payloadTransformer = new PayloadTransformer();
 
-            System.out.println(
-                "keyType:" + kv.keyType + " keyLen:" + kv.keyBytes.length +
-                    " valueType:" + kv.valType + " valueLen:" + kv.valBytes.length);
-        });
+            return payloadTransformer.toKeyValue(frame);
+        }).collect(Collectors.toSet());
 
-        System.out.println("Total partition size:" + str((pageCounter.pages() * store.pageSize())));
-        System.out.println("Total data size:" + str(dataSize.get()));
-    }
-
-    private static long KB = 1024;
-    private static long MB = 1024 * 1024;
-
-    private String str(long bytes) {
-        long mbs = bytes / MB;
-
-        if (mbs > 0)
-            return mbs + "." + (bytes % MB) + "mb";
-
-        return String.valueOf(bytes);
+        System.out.println("KeyValues: " + keyValueSet.size());
     }
 }
