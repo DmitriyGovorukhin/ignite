@@ -4,34 +4,26 @@ import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
 import java.util.function.Consumer;
 
-public class DataPayloadExtractor extends ScanAdapter {
-    private final FrameChainBuilder frameChainBuilder;
+public class DataPayloadExtractor {
 
-    public DataPayloadExtractor(Consumer<byte[]> consumerPayload) {
-        frameChainBuilder = new FrameChainBuilder(
-            (head) -> {
-                ByteBuffer buf = ByteBuffer.allocate(head.len);
+    public DataPayloadExtractor(
+        Consumer<byte[]> consumerPayload,
+        FrameChainBuilder frameChainBuilder
+    ) {
+        frameChainBuilder.addConsumer((frame) -> {
+            ByteBuffer buf = ByteBuffer.allocate(frame.len);
 
-                buf.order(ByteOrder.nativeOrder());
-                while (true) {
-                    buf.put(head.payload);
+            buf.order(ByteOrder.nativeOrder());
+            while (true) {
+                buf.put(frame.payload);
 
-                    head = head.next;
+                frame = frame.next;
 
-                    if (head == null)
-                        break;
-                }
-
-                consumerPayload.accept(buf.array());
+                if (frame == null)
+                    break;
             }
-        );
-    }
 
-    @Override public void onNextPage(ByteBuffer buf) {
-        frameChainBuilder.onNextPage(buf);
-    }
-
-    @Override public void onComplete() {
-        frameChainBuilder.onComplete();
+            consumerPayload.accept(buf.array());
+        });
     }
 }

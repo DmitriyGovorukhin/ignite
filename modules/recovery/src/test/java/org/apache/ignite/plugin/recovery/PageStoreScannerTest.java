@@ -15,6 +15,7 @@ import org.apache.ignite.configuration.DataStorageConfiguration;
 import org.apache.ignite.configuration.IgniteConfiguration;
 import org.apache.ignite.plugin.recovery.scan.PageStoreScanner;
 import org.apache.ignite.plugin.recovery.scan.elements.DataPayloadExtractor;
+import org.apache.ignite.plugin.recovery.scan.elements.FrameChainBuilder;
 import org.apache.ignite.plugin.recovery.scan.elements.KeyValue;
 import org.apache.ignite.plugin.recovery.scan.elements.KeyValueExtractor;
 import org.apache.ignite.plugin.recovery.scan.elements.PageCounter;
@@ -103,18 +104,22 @@ public class PageStoreScannerTest {
 
         PagesByType pagesByType = new PagesByType();
 
+        FrameChainBuilder frameChainBuilder = new FrameChainBuilder();
+
         Set<byte[]> payloadSet = new HashSet<>();
 
-        DataPayloadExtractor payloadExtractor = new DataPayloadExtractor(payloadSet::add);
+        DataPayloadExtractor payloadExtractor = new DataPayloadExtractor(
+            payloadSet::add, frameChainBuilder);
 
         Set<KeyValue> keyValueSet = new HashSet<>();
 
-        KeyValueExtractor keyValueExtractor = new KeyValueExtractor(keyValueSet::add);
+        KeyValueExtractor keyValueExtractor = new KeyValueExtractor(
+            keyValueSet::add, frameChainBuilder
+        );
 
         scanner.addHandler(pagesByType);
         scanner.addHandler(pageCounter);
-        scanner.addHandler(payloadExtractor);
-        scanner.addHandler(keyValueExtractor);
+        scanner.addHandler(frameChainBuilder);
 
         long time = System.currentTimeMillis();
 

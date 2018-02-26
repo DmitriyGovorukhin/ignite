@@ -2,6 +2,8 @@ package org.apache.ignite.plugin.recovery.scan.elements;
 
 import java.nio.ByteBuffer;
 import java.util.HashMap;
+import java.util.LinkedList;
+import java.util.List;
 import java.util.Map;
 import java.util.function.Consumer;
 import org.apache.ignite.internal.pagemem.PageIdUtils;
@@ -18,10 +20,10 @@ public class FrameChainBuilder extends ScanAdapter {
 
     private final Map<Long, Frame> frames = new HashMap<>();
 
-    private final Consumer<Frame> frameConsumer;
+    private final List<Consumer<Frame>> frameConsumers = new LinkedList<>();
 
-    public FrameChainBuilder(Consumer<Frame> consumer) {
-        frameConsumer = consumer;
+    public void addConsumer(Consumer<Frame> consumer) {
+        frameConsumers.add(consumer);
     }
 
     @Override public void onNextPage(ByteBuffer buf) {
@@ -106,7 +108,7 @@ public class FrameChainBuilder extends ScanAdapter {
 
         recursiveLen(head, remove);
 
-        frameConsumer.accept(head);
+        frameConsumers.forEach(c -> c.accept(head));
     }
 
     private int recursiveLen(Frame frame, boolean remove) {

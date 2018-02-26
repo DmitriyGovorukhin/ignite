@@ -1,24 +1,14 @@
 package org.apache.ignite.plugin.recovery.scan.elements;
 
-import java.nio.ByteBuffer;
 import java.util.function.Consumer;
 
-public class KeyValueExtractor extends ScanAdapter {
+public class KeyValueExtractor {
 
-    private final FrameChainBuilder frameChainBuilder;
-
-    public KeyValueExtractor(Consumer<KeyValue> payloadConsumer) {
-        frameChainBuilder = new FrameChainBuilder(
-            frame -> payloadConsumer.accept(frameToKeyValue(frame))
-        );
-    }
-
-    @Override public void onNextPage(ByteBuffer buf) {
-        frameChainBuilder.onNextPage(buf);
-    }
-
-    @Override public void onComplete() {
-        frameChainBuilder.onComplete();
+    public KeyValueExtractor(
+        Consumer<KeyValue> keyValueConsumer,
+        FrameChainBuilder frameChainBuilder
+    ) {
+        frameChainBuilder.addConsumer(frame -> keyValueConsumer.accept(frameToKeyValue(frame)));
     }
 
     private KeyValue frameToKeyValue(Frame head) {

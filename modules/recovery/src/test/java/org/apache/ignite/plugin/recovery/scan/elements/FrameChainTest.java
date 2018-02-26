@@ -24,7 +24,7 @@ public class FrameChainTest {
 
         System.out.println("Total tests:" + cnt.get());
 
-        assertEquals( 8 * 7 * 6 * 5 * 4 * 3 * 2, cnt.get());
+        assertEquals(8 * 7 * 6 * 5 * 4 * 3 * 2, cnt.get());
     }
 
     private void doTestRecursive(long totalLinks, LinkedList<Long> links, AtomicInteger cnt) {
@@ -50,7 +50,9 @@ public class FrameChainTest {
     private void doTest(LinkedList<Long> links) {
         Set<Frame> chains = new HashSet<>();
 
-        FrameChainBuilder frameChainBuilder = new FrameChainBuilder(chains::add);
+        FrameChainBuilder frameChainBuilder = new FrameChainBuilder();
+
+        frameChainBuilder.addConsumer(chains::add);
 
         StringBuilder sb = new StringBuilder();
 
