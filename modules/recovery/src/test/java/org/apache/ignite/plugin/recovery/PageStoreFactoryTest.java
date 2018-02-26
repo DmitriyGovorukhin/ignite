@@ -1,5 +1,6 @@
 package org.apache.ignite.plugin.recovery;
 
+import java.io.File;
 import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
@@ -20,7 +21,7 @@ public class PageStoreFactoryTest extends TestCase {
     public void test() throws IOException {
         PageStoreFactory pageStoreFactory = PageStoreFactory.create();
 
-        PageStore store = pageStoreFactory.createStore(FILE);
+        PageStore store = pageStoreFactory.createStore(new File(FILE));
 
         int pageSize = store.pageSize();
 

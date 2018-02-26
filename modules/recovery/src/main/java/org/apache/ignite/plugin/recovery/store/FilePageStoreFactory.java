@@ -12,7 +12,7 @@ public class FilePageStoreFactory implements PageStoreFactory {
         fileIOFactory = factory;
     }
 
-    @Override public PageStore createStore(String path) throws IOException {
-        return new FilePageStore(new File(path), fileIOFactory);
+    @Override public PageStore createStore(File file) throws IOException {
+        return new FilePageStore(file, fileIOFactory);
     }
 }

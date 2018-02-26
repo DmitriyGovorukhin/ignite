@@ -2,141 +2,164 @@ package org.apache.ignite.plugin.recovery;
 
 import java.io.File;
 import java.io.IOException;
-import java.nio.Buffer;
 import java.nio.ByteBuffer;
-import java.nio.ByteOrder;
-import java.nio.file.OpenOption;
-import java.nio.file.Path;
-import java.util.ArrayList;
-import java.util.LinkedList;
-import java.util.List;
+import java.nio.file.StandardOpenOption;
 import java.util.Map;
-import org.apache.ignite.IgniteCheckedException;
-import org.apache.ignite.configuration.CacheConfiguration;
+import java.util.Set;
+import org.apache.ignite.IgniteLogger;
+import org.apache.ignite.configuration.DataStorageConfiguration;
 import org.apache.ignite.internal.GridKernalContext;
-import org.apache.ignite.internal.GridKernalContextImpl;
-import org.apache.ignite.internal.pagemem.FullPageId;
-import org.apache.ignite.internal.pagemem.store.IgnitePageStoreManager;
-import org.apache.ignite.internal.processors.cache.StoredCacheData;
-import org.apache.ignite.internal.processors.cache.persistence.file.AsyncFileIOFactory;
 import org.apache.ignite.internal.processors.cache.persistence.file.FileIO;
 import org.apache.ignite.internal.processors.cache.persistence.file.FileIOFactory;
-import org.apache.ignite.internal.processors.cache.persistence.file.FilePageStoreManager;
+import org.apache.ignite.internal.processors.cache.persistence.tree.io.DataPageIO;
+import org.apache.ignite.internal.processors.cache.persistence.tree.io.DataPagePayload;
 import org.apache.ignite.internal.processors.cache.persistence.tree.io.PageIO;
-import org.apache.ignite.internal.processors.cache.persistence.wal.crc.PureJavaCrc32;
 import org.apache.ignite.internal.util.future.IgniteFinishedFutureImpl;
-import org.apache.ignite.internal.util.typedef.internal.CU;
 import org.apache.ignite.internal.util.typedef.internal.U;
 import org.apache.ignite.lang.IgniteFuture;
-
-import static java.nio.file.StandardOpenOption.READ;
-import static java.nio.file.StandardOpenOption.WRITE;
-import static org.apache.ignite.plugin.recovery.RecoveryUtils.filePageStoreManager;
+import org.apache.ignite.plugin.recovery.scan.PageStoreScanner;
+import org.apache.ignite.plugin.recovery.scan.elements.PageCounter;
+import org.apache.ignite.plugin.recovery.scan.elements.ScanAdapter;
+import org.apache.ignite.plugin.recovery.store.FilePageStoreFactory;
+import org.apache.ignite.plugin.recovery.store.PageStore;
+import org.apache.ignite.plugin.recovery.store.PageStoreFactory;
+import sun.nio.ch.DirectBuffer;
 
 public class RecoveryProcessor {
-    private final RecoveryConfiguration recoveryConfiguration;
+
+    private final IgniteLogger log;
 
     private final GridKernalContext ctx;
 
-    private final FileIOFactory ioFactory;
+    private final RecoveryConfiguration recoveryConfiguration;
+
+    private final FileIOFactory fileIOFactory;
+
+    private final PageStoreFactory pageStoreFactory;
 
     public RecoveryProcessor(
         RecoveryConfiguration cfg,
         GridKernalContext ctx
     ) {
-        this.recoveryConfiguration = cfg;
+        this.log = ctx.log(RecoveryProcessor.class);
         this.ctx = ctx;
-        this.ioFactory = new AsyncFileIOFactory();
+        this.recoveryConfiguration = cfg;
+        this.fileIOFactory = ctx.config().getDataStorageConfiguration().getFileIOFactory();
+        this.pageStoreFactory = new FilePageStoreFactory(fileIOFactory);
     }
 
-    public IgniteFuture<?> restoreDataBase() {
-        System.err.println("restore database");
+    public IgniteFuture<?> clonePartitionWithDataClearing(
+        long snapshotId,
+        Map<String, Set<Integer>> parts,
+        File opt
+    ) {
+        Object consistentId = ctx.discovery().localNode().consistentId();
 
-        return new IgniteFinishedFutureImpl<>();
-    }
+        DataStorageConfiguration dsCfg = ctx.config().getDataStorageConfiguration();
 
-    public IgniteFuture<?> verifyWal() {
-        return new IgniteFinishedFutureImpl<>();
-    }
+        int pageSize = dsCfg.getPageSize();
 
-    public IgniteFuture<?> verifyCacheConfigurations() {
-        return new IgniteFinishedFutureImpl<>();
-    }
+        String storePath = dsCfg.getStoragePath();
 
-    public IgniteFuture<List<FullPageId>> verifyPartitions() {
-        FilePageStoreManager pageStoreManager = filePageStoreManager(ctx);
-
-        List<CacheConfiguration> cfgs = new LinkedList<>();
+        File storeFile = new File(storePath, consistentId.toString());
 
         try {
-            Map<String, StoredCacheData> cacheStores = pageStoreManager.readCacheConfigurations();
+            for (Map.Entry<String, Set<Integer>> entry : parts.entrySet()) {
+                String cacheOrGroupName = entry.getKey();
 
-            for (StoredCacheData sc : cacheStores.values())
-                cfgs.add(sc.config());
-        }
-        catch (IgniteCheckedException e) {
-            return new IgniteFinishedFutureImpl<>(e);
-        }
+                File cacheOrGroupDir = new File(storeFile, "cache-" + cacheOrGroupName);
+                File cacheOrGroupDirClone = new File(opt, "cache-" + cacheOrGroupName);
 
-        int pageSize = ctx.config().getDataStorageConfiguration().getPageSize();
+                for (Integer partId : entry.getValue()) {
+                    String partIdStr = String.valueOf(partId);
 
-        ByteBuffer buf = ByteBuffer.allocate(pageSize);
+                    File partCloneFile = new File(cacheOrGroupDirClone, "part-" + partIdStr + ".bin");
 
-        buf.order(ByteOrder.nativeOrder());
+                    if (!cacheOrGroupDirClone.exists())
+                        cacheOrGroupDirClone.mkdirs();
+                    else
+                        cacheOrGroupDirClone.delete();
 
-        List<FullPageId> corruptedPages = new LinkedList<>();
+                    File partFile = new File(cacheOrGroupDir, "part-" + partIdStr + ".bin");
 
-        try {
-            for (CacheConfiguration cacheCfg : cfgs) {
-                boolean isShared = cacheCfg.getGroupName() != null;
+                    PageStore partStore = pageStoreFactory.createStore(partFile);
 
-                String cacheName = isShared ? cacheCfg.getGroupName() : cacheCfg.getName();
+                    PageStoreScanner scanner = PageStoreScanner.create(partStore);
 
-                int partitions = cacheCfg.getAffinity().partitions();
+                    ByteBuffer writeBuffer = ByteBuffer.allocate(pageSize);
 
-                for (int id = 0; id < partitions; id++) {
-                    Path path = pageStoreManager.getPath(isShared, cacheName, id);
+                    PageCounter pageCounter = new PageCounter();
 
-                    File partition = path.toFile();
+                    scanner.addHandler(pageCounter);
 
-                    if (partition.exists()) {
-                        FileIO file = ioFactory.create(partition, READ);
+                    scanner.addHandler(new ScanAdapter() {
+                        private final FileIO fileIO = fileIOFactory.create(
+                            partCloneFile, StandardOpenOption.WRITE, StandardOpenOption.CREATE_NEW);
 
-                        long size = file.size();
+                        @Override public void onNextPage(ByteBuffer buf) {
+                            if (PageIO.getType(buf) != PageIO.T_DATA) {
+                                try {
+                                    fileIO.write(buf);
+                                }
+                                catch (IOException e) {
+                                    log.error("Error write page", e);
+                                }
 
-                        if (size % pageSize != 0)
-                            System.out.println("WARNING! size:" + size + " pageSize:" + pageSize);
+                                return;
+                            }
 
-                        for (long pos = pageSize; pos < size; pos += pageSize) {
-                            file.read(buf, pos);
+                            writeBuffer.put(buf);
 
-                            buf.rewind();
+                            long ptr = ((DirectBuffer)buf).address();
 
-                            int crcSaved = PageIO.getCrc(buf);
+                            DataPageIO io = DataPageIO.VERSIONS.forPage(ptr);
 
-                            PageIO.setCrc(buf, 0);
+                            long pageId = PageIO.getPageId(ptr);
 
-                            int currCrc = PureJavaCrc32.calcCrc32(buf, pageSize);
+                            int items = io.getDirectCount(ptr);
 
-                            if (currCrc != crcSaved)
-                                corruptedPages.add(
-                                    new FullPageId(
-                                        PageIO.getPageId(buf),
-                                        CU.cacheId(cacheName)
-                                    )
-                                );
+                            for (int i = 0; i < items; i++) {
+                                DataPagePayload payload = io.readPayload(ptr, i, pageSize);
 
-                            buf.rewind();
+                                writeBuffer.position(payload.offset());
+
+                                writeBuffer.put(new byte[payload.payloadSize()]);
+                            }
+
+                            writeBuffer.flip();
+
+                            try {
+                                fileIO.write(writeBuffer);
+                            }
+                            catch (IOException e) {
+                                log.error("Error write page", e);
+                            }
+
+                            writeBuffer.clear();
                         }
-                    }
+
+                        @Override public void onComplete() {
+                            try {
+                                fileIO.force();
+
+                                fileIO.close();
+                            }
+                            catch (IOException e) {
+                                log.error("Error close file page", e);
+                            }
+                        }
+                    });
+
+                    scanner.scan();
+
+                    System.out.println("Pages write " + pageCounter.pages() + ", page size " + pageSize);
                 }
             }
-
         }
         catch (IOException e) {
             return new IgniteFinishedFutureImpl<>(e);
         }
 
-        return new IgniteFinishedFutureImpl<>(corruptedPages);
+        return new IgniteFinishedFutureImpl<>();
     }
 }

@@ -1,5 +1,6 @@
 package org.apache.ignite.plugin.recovery;
 
+import java.io.File;
 import java.io.IOException;
 import java.util.HashSet;
 import java.util.Random;
@@ -96,7 +97,7 @@ public class PageStoreScannerTest {
     public void test() throws IOException {
         PageStoreFactory f = PageStoreFactory.create();
 
-        PageStore store = f.createStore(FILE);
+        PageStore store = f.createStore(new File(FILE));
 
         PageStoreScanner scanner = PageStoreScanner.create(store);
 
