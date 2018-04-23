@@ -218,9 +218,18 @@ public class PagePartitionCountersIO extends PageIO {
 
         readCacheSizes(addr, sizes);
 
-        for (Map.Entry<Integer, Long> e : sizes.entrySet())
+        long totalSize = 0;
+
+        for (Map.Entry<Integer, Long> e : sizes.entrySet()) {
             sb.a("\n\t\t").a(e.getKey()).a("=").a(e.getValue());
 
-        sb.a("\n\t}\n]");
+            totalSize += e.getValue();
+        }
+
+        sb.a("\n\t}");
+
+        sb.a("\n\t").a("totalSize").a("=").a(totalSize);
+
+        sb.a("\n]");
     }
 }

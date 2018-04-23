@@ -14,6 +14,7 @@ import org.apache.ignite.configuration.CacheConfiguration;
 import org.apache.ignite.configuration.DataRegionConfiguration;
 import org.apache.ignite.configuration.DataStorageConfiguration;
 import org.apache.ignite.configuration.IgniteConfiguration;
+import org.apache.ignite.internal.util.typedef.internal.SB;
 import org.apache.ignite.plugin.recovery.scan.PageStoreScanner;
 import org.apache.ignite.plugin.recovery.scan.elements.DataPayloadExtractor;
 import org.apache.ignite.plugin.recovery.scan.elements.FrameChainBuilder;
@@ -21,10 +22,13 @@ import org.apache.ignite.plugin.recovery.scan.elements.KeyValue;
 import org.apache.ignite.plugin.recovery.scan.elements.KeyValueExtractor;
 import org.apache.ignite.plugin.recovery.scan.elements.PageCounter;
 import org.apache.ignite.plugin.recovery.scan.elements.PagesByType;
+import org.apache.ignite.plugin.recovery.scan.elements.PageToString;
 import org.apache.ignite.plugin.recovery.store.PageStore;
 import org.apache.ignite.plugin.recovery.store.PageStoreFactory;
 import org.junit.Test;
 
+import static org.apache.ignite.internal.processors.cache.persistence.tree.io.PageIO.T_PART_CNTRS;
+import static org.apache.ignite.internal.processors.cache.persistence.tree.io.PageIO.T_PART_META;
 import static org.apache.ignite.plugin.recovery.utils.PageTypeMapping.strType;
 
 public class PageStoreScannerTest {
@@ -95,15 +99,30 @@ public class PageStoreScannerTest {
 
     @Test
     public void test() throws IOException {
+        File partition = new File("/home/dgovorukhin/Downloads/tests/pitr-11/gridgain/ssd/pitr_test11/10_116_206_10_47500/" +
+            "cacheGroup-CACHEGROUP_PARTICLE_union-module_com.sbt.bm.ucp.common.dpl.model.dictionary.DServiceZone/" +
+            "part-15781.bin");
+
+        File partition2 = new File("/home/dgovorukhin/Downloads/tests/pitr-11/gridgain/ssd/pitr_test11/10_116_206_82_47500/" +
+            "cacheGroup-CACHEGROUP_PARTICLE_union-module_com.sbt.bm.ucp.common.dpl.model.dictionary.DServiceZone/" +
+            "part-15781.bin");
+
+        printPartition(partition);
+        printPartition(partition2);
+    }
+
+    private void printPartition(File file) throws IOException {
         PageStoreFactory f = PageStoreFactory.create();
 
-        PageStore store = f.createStore(new File(FILE));
+        PageStore store = f.createStore(file);
 
         PageStoreScanner scanner = PageStoreScanner.create(store);
 
         PageCounter pageCounter = new PageCounter();
 
         PagesByType pagesByType = new PagesByType();
+
+        PageToString pageToString = new PageToString(T_PART_META, T_PART_CNTRS);
 
         FrameChainBuilder frameChainBuilder = new FrameChainBuilder();
 
@@ -120,11 +139,15 @@ public class PageStoreScannerTest {
 
         scanner.addHandler(pagesByType);
         scanner.addHandler(pageCounter);
+        scanner.addHandler(pageToString);
         scanner.addHandler(frameChainBuilder);
 
         long time = System.currentTimeMillis();
 
         scanner.scan();
+
+        System.out.println("File path:" + file.getPath());
+        System.out.println("File name:" + file.getName());
 
         System.out.println("Scan time: " + (System.currentTimeMillis() - time));
 
@@ -135,5 +158,18 @@ public class PageStoreScannerTest {
         System.out.println("Payloads: " + payloadSet.size());
 
         System.out.println("KeyValues: " + keyValueSet.size());
+
+        pageToString.stringPages().forEach((k, v) -> {
+            SB sb = new SB();
+
+            sb.a("Type:" + k + " ").a("[\n");
+
+            for (String str:v)
+                sb.a("\t").a(str).a("\n");
+
+            sb.a("]");
+
+            System.out.println(sb);
+        });
     }
 }

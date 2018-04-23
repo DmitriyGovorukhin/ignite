@@ -29,7 +29,9 @@ public class PageTypeMapping {
     }
 
     public static String strType(int type) {
-        return TYPE_TO_STRING.get((short)type);
+        String str = TYPE_TO_STRING.get((short)type);
+
+        return str != null ? str : "type(" + String.valueOf(type) + ")";
     }
 
     public static int intType(String type) {
