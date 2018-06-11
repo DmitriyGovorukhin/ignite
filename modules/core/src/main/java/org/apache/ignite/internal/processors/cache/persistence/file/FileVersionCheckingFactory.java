@@ -52,8 +52,11 @@ public class FileVersionCheckingFactory implements FilePageStoreFactory {
      * @param fileIOFactoryStoreV1 File IO factory for V1 page store and for version checking.
      * @param memCfg Memory configuration.
      */
-    public FileVersionCheckingFactory(FileIOFactory fileIOFactory, FileIOFactory fileIOFactoryStoreV1,
-        DataStorageConfiguration memCfg) {
+    public FileVersionCheckingFactory(
+        FileIOFactory fileIOFactory,
+        FileIOFactory fileIOFactoryStoreV1,
+        DataStorageConfiguration memCfg
+    ) {
         this.fileIOFactory = fileIOFactory;
         this.fileIOFactoryStoreV1 = fileIOFactoryStoreV1;
         this.memCfg = memCfg;
@@ -61,17 +64,18 @@ public class FileVersionCheckingFactory implements FilePageStoreFactory {
 
     /**
      * @param fileIOFactory File IO factory for V1 & V2 page store and for version checking.
-     * @param memCfg Memory configuration.
+     * @param dsCfg Data storage configuration.
      */
-    public FileVersionCheckingFactory(FileIOFactory fileIOFactory, DataStorageConfiguration memCfg) {
-        this(fileIOFactory, fileIOFactory, memCfg);
+    public FileVersionCheckingFactory(FileIOFactory fileIOFactory, DataStorageConfiguration dsCfg) {
+        this(fileIOFactory, fileIOFactory, dsCfg);
     }
 
     /** {@inheritDoc} */
     @Override public FilePageStore createPageStore(
         byte type,
         File file,
-        AllocatedPageTracker allocatedTracker) throws IgniteCheckedException {
+        AllocatedPageTracker allocatedTracker
+    ) throws IgniteCheckedException {
         if (!file.exists())
             return createPageStore(type, file, latestVersion(), allocatedTracker);
 
@@ -126,7 +130,8 @@ public class FileVersionCheckingFactory implements FilePageStoreFactory {
         byte type,
         File file,
         int ver,
-        AllocatedPageTracker allocatedTracker) {
+        AllocatedPageTracker allocatedTracker
+    ) {
         switch (ver) {
             case FilePageStore.VERSION:
                 return new FilePageStore(type, file, fileIOFactoryStoreV1, memCfg, allocatedTracker);
