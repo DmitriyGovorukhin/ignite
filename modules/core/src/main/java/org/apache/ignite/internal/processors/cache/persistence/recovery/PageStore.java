@@ -9,4 +9,6 @@ public interface PageStore {
     PageIterator iterator();
 
     int readPage(long pageId, ByteBuffer buf) throws IOException;
+
+    int pageSize();
 }

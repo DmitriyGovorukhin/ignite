@@ -62,6 +62,10 @@ public class RecoveryPageStore implements PageStore {
         return iterator(0, Long.MAX_VALUE);
     }
 
+    @Override public int pageSize() {
+        return pageSize;
+    }
+
     private long pageOffset(long pageId) {
         return (long)PageIdUtils.pageIndex(pageId) * pageSize + headerSize;
     }
