@@ -7,6 +7,7 @@ import java.util.LinkedList;
 import java.util.List;
 import org.apache.ignite.internal.processors.cache.persistence.recovery.PageIterator;
 import org.apache.ignite.internal.processors.cache.persistence.recovery.PageStore;
+import org.apache.ignite.internal.processors.cache.persistence.recovery.PageStoreScanner;
 import org.apache.ignite.internal.util.GridUnsafe;
 
 public class FilePageStoreScanner implements PageStoreScanner {
@@ -23,7 +24,7 @@ public class FilePageStoreScanner implements PageStoreScanner {
     }
 
     @Override public void scan() {
-        int pageSize = pageStore.pageSize();
+        int pageSize = pageStore.descriptor().pageSize();
 
         PageIterator it = pageStore.iterator();
 

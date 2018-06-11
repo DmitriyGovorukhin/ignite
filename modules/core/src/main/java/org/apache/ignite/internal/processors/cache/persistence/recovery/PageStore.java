@@ -2,6 +2,7 @@ package org.apache.ignite.internal.processors.cache.persistence.recovery;
 
 import java.io.IOException;
 import java.nio.ByteBuffer;
+import org.apache.ignite.internal.processors.cache.persistence.recovery.finder.PageStoreDescriptor;
 
 public interface PageStore {
     PageIterator iterator(long pageLowBound, long pageHighBound);
@@ -10,5 +11,5 @@ public interface PageStore {
 
     int readPage(long pageId, ByteBuffer buf) throws IOException;
 
-    int pageSize();
+    PageStoreDescriptor descriptor();
 }

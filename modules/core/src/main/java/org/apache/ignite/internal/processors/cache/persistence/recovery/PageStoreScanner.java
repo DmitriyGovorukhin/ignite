@@ -1,7 +1,8 @@
-package org.apache.ignite.internal.processors.cache.persistence.recovery.scan;
+package org.apache.ignite.internal.processors.cache.persistence.recovery;
 
 import org.apache.ignite.IgniteCheckedException;
-import org.apache.ignite.internal.processors.cache.persistence.recovery.PageStore;
+import org.apache.ignite.internal.processors.cache.persistence.recovery.scan.FilePageStoreScanner;
+import org.apache.ignite.internal.processors.cache.persistence.recovery.scan.ScanElement;
 
 public interface PageStoreScanner {
 

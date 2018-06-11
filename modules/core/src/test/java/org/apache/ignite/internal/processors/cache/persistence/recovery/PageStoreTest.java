@@ -4,23 +4,23 @@ import java.io.File;
 import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.nio.file.Paths;
+import java.util.List;
 import org.apache.ignite.IgniteCheckedException;
 import org.apache.ignite.configuration.DataStorageConfiguration;
 import org.apache.ignite.internal.pagemem.PageMemory;
 import org.apache.ignite.internal.processors.cache.persistence.AllocatedPageTracker;
-import org.apache.ignite.internal.processors.cache.persistence.file.FileIO;
-import org.apache.ignite.internal.processors.cache.persistence.file.FileIOFactory;
 import org.apache.ignite.internal.processors.cache.persistence.file.FilePageStore;
 import org.apache.ignite.internal.processors.cache.persistence.file.FilePageStoreFactory;
 import org.apache.ignite.internal.processors.cache.persistence.file.FileVersionCheckingFactory;
+import org.apache.ignite.internal.processors.cache.persistence.recovery.finder.FilePageStoreDescriptor;
+import org.apache.ignite.internal.processors.cache.persistence.recovery.finder.FilePageStoreFinder;
+import org.apache.ignite.internal.processors.cache.persistence.recovery.stores.RecoveryPageStore;
 import org.apache.ignite.internal.processors.cache.persistence.tree.io.DataPageIO;
 import org.apache.ignite.internal.processors.cache.persistence.tree.io.PageIO;
 import org.apache.ignite.internal.util.GridUnsafe;
 import org.apache.ignite.internal.util.typedef.internal.U;
 import org.apache.ignite.testframework.junits.common.GridCommonAbstractTest;
 import org.junit.Assert;
-
-import static java.nio.file.StandardOpenOption.READ;
 
 public class PageStoreTest extends GridCommonAbstractTest {
     private static final AllocatedPageTracker NOOP_TRACKER = (delta) -> {
@@ -72,13 +72,13 @@ public class PageStoreTest extends GridCommonAbstractTest {
             GridUnsafe.freeBuffer(buf0);
         }
 
-        FileIOFactory ioFactory = dsCfg.getFileIOFactory();
+        FilePageStoreFinder storeFinder = new FilePageStoreFinder();
 
-        FileIO file0 = ioFactory.create(file, READ);
+        List<FilePageStoreDescriptor> stores = storeFinder.findStores(U.defaultWorkDirectory());
 
-        RecoveryPageStore recoverStore = new RecoveryPageStore(file0, file0.size(), pageSize, pageSize);
+        RecoveryPageStore recoveryPageStore = new RecoveryPageStore(stores.get(0));
 
-        PageIterator it = recoverStore.iterator();
+        PageIterator it = recoveryPageStore.iterator();
 
         ByteBuffer buf1 = GridUnsafe.allocateBuffer(pageSize);
 

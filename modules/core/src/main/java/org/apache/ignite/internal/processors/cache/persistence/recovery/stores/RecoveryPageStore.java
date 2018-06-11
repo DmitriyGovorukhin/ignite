@@ -1,9 +1,13 @@
-package org.apache.ignite.internal.processors.cache.persistence.recovery;
+package org.apache.ignite.internal.processors.cache.persistence.recovery.stores;
 
 import java.io.IOException;
 import java.nio.ByteBuffer;
 import org.apache.ignite.internal.pagemem.PageIdUtils;
 import org.apache.ignite.internal.processors.cache.persistence.file.FileIO;
+import org.apache.ignite.internal.processors.cache.persistence.recovery.PageIterator;
+import org.apache.ignite.internal.processors.cache.persistence.recovery.PageStore;
+import org.apache.ignite.internal.processors.cache.persistence.recovery.finder.FilePageStoreDescriptor;
+import org.apache.ignite.internal.processors.cache.persistence.recovery.finder.PageStoreDescriptor;
 
 public class RecoveryPageStore implements PageStore {
 
@@ -15,11 +19,15 @@ public class RecoveryPageStore implements PageStore {
 
     private final long length;
 
-    public RecoveryPageStore(FileIO fileIO, long length, int headerSize, int pageSize) {
-        this.fileIO = fileIO;
-        this.length = length;
-        this.headerSize = headerSize;
-        this.pageSize = pageSize;
+    private final PageStoreDescriptor desc;
+
+    public RecoveryPageStore(FilePageStoreDescriptor desc) {
+        this.desc = desc;
+
+        fileIO = desc.fileIO();
+        length = desc.size();
+        headerSize = desc.pageSize();
+        pageSize = desc.pageSize();
     }
 
     @Override public int readPage(long pageId, ByteBuffer buf) throws IOException {
@@ -62,8 +70,8 @@ public class RecoveryPageStore implements PageStore {
         return iterator(0, Long.MAX_VALUE);
     }
 
-    @Override public int pageSize() {
-        return pageSize;
+    @Override public PageStoreDescriptor descriptor() {
+        return desc;
     }
 
     private long pageOffset(long pageId) {

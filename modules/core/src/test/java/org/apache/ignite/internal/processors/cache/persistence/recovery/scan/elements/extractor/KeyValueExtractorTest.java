@@ -1,6 +1,6 @@
 package org.apache.ignite.internal.processors.cache.persistence.recovery.scan.elements.extractor;
 
-import java.io.File;
+import java.util.List;
 import java.util.concurrent.atomic.AtomicInteger;
 import org.apache.ignite.Ignite;
 import org.apache.ignite.IgniteCache;
@@ -9,9 +9,9 @@ import org.apache.ignite.configuration.CacheConfiguration;
 import org.apache.ignite.configuration.DataRegionConfiguration;
 import org.apache.ignite.configuration.DataStorageConfiguration;
 import org.apache.ignite.configuration.IgniteConfiguration;
-import org.apache.ignite.internal.processors.cache.persistence.file.FileIO;
-import org.apache.ignite.internal.processors.cache.persistence.file.FileIOFactory;
-import org.apache.ignite.internal.processors.cache.persistence.recovery.RecoveryPageStore;
+import org.apache.ignite.internal.processors.cache.persistence.recovery.stores.RecoveryPageStore;
+import org.apache.ignite.internal.processors.cache.persistence.recovery.finder.FilePageStoreDescriptor;
+import org.apache.ignite.internal.processors.cache.persistence.recovery.finder.FilePageStoreFinder;
 import org.apache.ignite.internal.processors.cache.persistence.recovery.scan.FilePageStoreScanner;
 import org.apache.ignite.internal.processors.cache.persistence.recovery.scan.elements.PageCounter;
 import org.apache.ignite.internal.processors.cache.persistence.recovery.scan.elements.PagesByType;
@@ -20,8 +20,6 @@ import org.apache.ignite.spi.discovery.tcp.TcpDiscoverySpi;
 import org.apache.ignite.spi.discovery.tcp.ipfinder.TcpDiscoveryIpFinder;
 import org.apache.ignite.spi.discovery.tcp.ipfinder.vm.TcpDiscoveryVmIpFinder;
 import org.apache.ignite.testframework.junits.common.GridCommonAbstractTest;
-
-import static org.apache.ignite.configuration.DataStorageConfiguration.DFLT_PAGE_SIZE;
 
 public class KeyValueExtractorTest extends GridCommonAbstractTest {
     public static final TcpDiscoveryIpFinder IP_FINDER = new TcpDiscoveryVmIpFinder(true);
@@ -68,18 +66,11 @@ public class KeyValueExtractorTest extends GridCommonAbstractTest {
 
         stopGrid(0, false);
 
-        String partitionPath = U.defaultWorkDirectory() + "/db/NODE/cache-default/part-0.bin";
+        FilePageStoreFinder storeFinder = new FilePageStoreFinder();
 
-        DataStorageConfiguration dsCfg = new DataStorageConfiguration();
+        List<FilePageStoreDescriptor> stores = storeFinder.findStores(U.defaultWorkDirectory());
 
-        dsCfg.setPageSize(DFLT_PAGE_SIZE);
-
-        FileIOFactory ioFactory = dsCfg.getFileIOFactory();
-
-        FileIO partition = ioFactory.create(new File(partitionPath));
-
-        RecoveryPageStore recoveryPageStore = new RecoveryPageStore(
-            partition, partition.size(), dsCfg.getPageSize(), dsCfg.getPageSize());
+        RecoveryPageStore recoveryPageStore = new RecoveryPageStore(stores.get(1));
 
         FilePageStoreScanner scanner = new FilePageStoreScanner(recoveryPageStore);
 
