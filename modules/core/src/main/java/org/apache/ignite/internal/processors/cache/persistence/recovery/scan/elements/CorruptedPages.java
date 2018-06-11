@@ -4,6 +4,7 @@ import java.nio.ByteBuffer;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.Set;
+import org.apache.ignite.internal.processors.cache.persistence.recovery.finder.PageStoreDescriptor;
 import org.apache.ignite.internal.processors.cache.persistence.recovery.scan.ScanAdapter;
 import org.apache.ignite.internal.processors.cache.persistence.tree.io.PageIO;
 import org.apache.ignite.internal.processors.cache.persistence.wal.crc.PureJavaCrc32;
@@ -11,6 +12,10 @@ import org.apache.ignite.internal.processors.cache.persistence.wal.crc.PureJavaC
 public class CorruptedPages extends ScanAdapter {
 
     private final Set<Long> corruptedPages = new HashSet<>();
+
+    public CorruptedPages(PageStoreDescriptor descriptor) {
+        super(descriptor);
+    }
 
     @Override public void onNextPage(ByteBuffer buf) {
         int pageSize = buf.capacity();

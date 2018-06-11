@@ -1,10 +1,14 @@
 package org.apache.ignite.internal.processors.cache.persistence.recovery.scan.elements.extractor;
 
+import java.io.File;
 import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.atomic.AtomicInteger;
+import org.apache.ignite.configuration.DataStorageConfiguration;
+import org.apache.ignite.internal.processors.cache.persistence.file.FileIO;
+import org.apache.ignite.internal.processors.cache.persistence.recovery.finder.FilePageStoreDescriptor;
 import org.apache.ignite.internal.util.typedef.internal.U;
 import org.apache.ignite.testframework.junits.common.GridCommonAbstractTest;
 
@@ -45,7 +49,7 @@ public class FrameChainTest extends GridCommonAbstractTest {
     private void doTest(LinkedList<Long> links) {
         Set<Frame> chains = new HashSet<>();
 
-        FrameChainBuilder frameChainBuilder = new FrameChainBuilder();
+        FrameChainBuilder frameChainBuilder = new FrameChainBuilder(createMockDescriptor());
 
         frameChainBuilder.addConsumer(chains::add);
 
@@ -96,5 +100,41 @@ public class FrameChainTest extends GridCommonAbstractTest {
 
             link = frame.link;
         }
+    }
+
+    private FilePageStoreDescriptor createMockDescriptor() {
+        return new FilePageStoreDescriptor() {
+            @Override public File file() {
+                return null;
+            }
+
+            @Override public FileIO fileIO() {
+                return null;
+            }
+
+            @Override public int partitionId() {
+                return 0;
+            }
+
+            @Override public long size() {
+                return DataStorageConfiguration.DFLT_PAGE_SIZE;
+            }
+
+            @Override public int pageSize() {
+                return 0;
+            }
+
+            @Override public int version() {
+                return 0;
+            }
+
+            @Override public byte type() {
+                return 0;
+            }
+
+            @Override public String cacheOrGroupName() {
+                return null;
+            }
+        };
     }
 }

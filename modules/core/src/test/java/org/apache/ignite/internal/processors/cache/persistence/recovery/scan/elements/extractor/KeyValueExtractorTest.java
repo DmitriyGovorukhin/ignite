@@ -70,7 +70,9 @@ public class KeyValueExtractorTest extends GridCommonAbstractTest {
 
         List<FilePageStoreDescriptor> stores = storeFinder.findStores(U.defaultWorkDirectory());
 
-        RecoveryPageStore recoveryPageStore = new RecoveryPageStore(stores.get(1));
+        FilePageStoreDescriptor desc = stores.get(1);
+
+        RecoveryPageStore recoveryPageStore = new RecoveryPageStore(desc);
 
         FilePageStoreScanner scanner = new FilePageStoreScanner(recoveryPageStore);
 
@@ -78,11 +80,11 @@ public class KeyValueExtractorTest extends GridCommonAbstractTest {
 
         scanner.addHandler(pageCounter);
 
-        PagesByType pagesByType = new PagesByType();
+        PagesByType pagesByType = new PagesByType(desc);
 
         scanner.addHandler(pagesByType);
 
-        FrameChainBuilder frameChainBuilder = new FrameChainBuilder();
+        FrameChainBuilder frameChainBuilder = new FrameChainBuilder(desc);
 
         scanner.addHandler(frameChainBuilder);
 
