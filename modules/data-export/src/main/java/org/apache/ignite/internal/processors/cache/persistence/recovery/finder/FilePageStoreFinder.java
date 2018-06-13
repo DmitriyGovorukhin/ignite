@@ -16,9 +16,7 @@ public class FilePageStoreFinder extends PageStoreFinder<FilePageStoreDescriptor
     private final FileIOFactory ioFactory = new DataStorageConfiguration().getFileIOFactory();
 
     @Override protected FilePageStoreDescriptor createDescriptor(File file) {
-        try {
-            FileIO fileIO = ioFactory.create(file, StandardOpenOption.READ);
-
+        try (FileIO fileIO = ioFactory.create(file, StandardOpenOption.READ)){
             int header = FilePageStore.HEADER_SIZE;
 
             ByteBuffer buf = ByteBuffer.allocate(header).order(ByteOrder.LITTLE_ENDIAN);
@@ -44,10 +42,6 @@ public class FilePageStoreFinder extends PageStoreFinder<FilePageStoreDescriptor
             return new FilePageStoreDescriptor() {
                 @Override public File file() {
                     return file;
-                }
-
-                @Override public FileIO fileIO() {
-                    return fileIO;
                 }
 
                 @Override public int partitionId() {

@@ -15,7 +15,7 @@ import org.apache.ignite.internal.processors.cache.persistence.file.FilePageStor
 import org.apache.ignite.internal.processors.cache.persistence.file.FileVersionCheckingFactory;
 import org.apache.ignite.internal.processors.cache.persistence.recovery.finder.FilePageStoreDescriptor;
 import org.apache.ignite.internal.processors.cache.persistence.recovery.finder.FilePageStoreFinder;
-import org.apache.ignite.internal.processors.cache.persistence.recovery.stores.RecoveryPageStore;
+import org.apache.ignite.internal.processors.cache.persistence.recovery.stores.PartitionPageStore;
 import org.apache.ignite.internal.processors.cache.persistence.tree.io.DataPageIO;
 import org.apache.ignite.internal.processors.cache.persistence.tree.io.PageIO;
 import org.apache.ignite.internal.util.GridUnsafe;
@@ -77,9 +77,9 @@ public class PageStoreTest extends GridCommonAbstractTest {
 
         List<FilePageStoreDescriptor> stores = storeFinder.findStores(U.defaultWorkDirectory());
 
-        RecoveryPageStore recoveryPageStore = new RecoveryPageStore(stores.get(0));
+        PartitionPageStore partitionPageStore = new PartitionPageStore(stores.get(0));
 
-        PageIterator it = recoveryPageStore.iterator();
+        PageIterator it = partitionPageStore.iterator();
 
         ByteBuffer buf1 = GridUnsafe.allocateBuffer(pageSize);
 

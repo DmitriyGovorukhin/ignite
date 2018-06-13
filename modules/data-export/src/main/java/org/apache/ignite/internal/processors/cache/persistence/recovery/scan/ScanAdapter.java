@@ -1,16 +1,16 @@
 package org.apache.ignite.internal.processors.cache.persistence.recovery.scan;
 
-import org.apache.ignite.internal.processors.cache.persistence.recovery.finder.PageStoreDescriptor;
+import org.apache.ignite.internal.processors.cache.persistence.recovery.finder.StoreDescriptor;
 
 public abstract class ScanAdapter implements ScanElement {
 
-    protected final int pageSize;
+    protected final int pageSize = 0;
 
-    protected final PageStoreDescriptor descriptor;
+    protected final StoreDescriptor descriptor;
 
-    public ScanAdapter(PageStoreDescriptor descriptor) {
+    public ScanAdapter(StoreDescriptor descriptor) {
         this.descriptor = descriptor;
-        this.pageSize = descriptor.pageSize();
+    //    this.pageSize = descriptor.pageSize();
     }
 
     @Override public void onComplete() {

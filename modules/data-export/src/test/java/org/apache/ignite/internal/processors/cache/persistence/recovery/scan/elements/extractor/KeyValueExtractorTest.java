@@ -9,10 +9,10 @@ import org.apache.ignite.configuration.CacheConfiguration;
 import org.apache.ignite.configuration.DataRegionConfiguration;
 import org.apache.ignite.configuration.DataStorageConfiguration;
 import org.apache.ignite.configuration.IgniteConfiguration;
-import org.apache.ignite.internal.processors.cache.persistence.recovery.stores.RecoveryPageStore;
+import org.apache.ignite.internal.processors.cache.persistence.recovery.stores.PartitionPageStore;
 import org.apache.ignite.internal.processors.cache.persistence.recovery.finder.FilePageStoreDescriptor;
 import org.apache.ignite.internal.processors.cache.persistence.recovery.finder.FilePageStoreFinder;
-import org.apache.ignite.internal.processors.cache.persistence.recovery.scan.FilePageStoreScanner;
+import org.apache.ignite.internal.processors.cache.persistence.recovery.scan.PartitionPageStoreScanner;
 import org.apache.ignite.internal.processors.cache.persistence.recovery.scan.elements.PageCounter;
 import org.apache.ignite.internal.processors.cache.persistence.recovery.scan.elements.PagesByType;
 import org.apache.ignite.internal.util.typedef.internal.U;
@@ -73,9 +73,9 @@ public class KeyValueExtractorTest extends GridCommonAbstractTest {
 
         FilePageStoreDescriptor desc = stores.get(1);
 
-        RecoveryPageStore recoveryPageStore = new RecoveryPageStore(desc);
+        PartitionPageStore partitionPageStore = new PartitionPageStore(desc);
 
-        FilePageStoreScanner scanner = new FilePageStoreScanner(recoveryPageStore);
+        PartitionPageStoreScanner scanner = new PartitionPageStoreScanner(partitionPageStore);
 
         PageCounter pageCounter = new PageCounter();
 

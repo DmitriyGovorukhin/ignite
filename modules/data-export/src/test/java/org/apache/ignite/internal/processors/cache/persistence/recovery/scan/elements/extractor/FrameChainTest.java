@@ -8,7 +8,6 @@ import java.util.Set;
 import java.util.concurrent.atomic.AtomicInteger;
 import junit.framework.TestCase;
 import org.apache.ignite.configuration.DataStorageConfiguration;
-import org.apache.ignite.internal.processors.cache.persistence.file.FileIO;
 import org.apache.ignite.internal.processors.cache.persistence.recovery.finder.FilePageStoreDescriptor;
 import org.apache.ignite.internal.util.typedef.internal.U;
 import org.apache.ignite.testframework.junits.common.GridCommonAbstractTest;
@@ -106,10 +105,6 @@ public class FrameChainTest extends GridCommonAbstractTest {
     private FilePageStoreDescriptor createMockDescriptor() {
         return new FilePageStoreDescriptor() {
             @Override public File file() {
-                return null;
-            }
-
-            @Override public FileIO fileIO() {
                 return null;
             }
 

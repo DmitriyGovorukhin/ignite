@@ -5,11 +5,9 @@ import java.io.FileFilter;
 import java.util.ArrayList;
 import java.util.List;
 import org.apache.ignite.internal.processors.cache.persistence.recovery.finder.PageStoreDescriptor;
+import org.apache.ignite.internal.processors.cache.persistence.recovery.finder.StoreDescriptor;
 
 public abstract class PageStoreFinder<T extends PageStoreDescriptor> {
-
-    private static final FileFilter FILE_FILTER = file -> isPartition(file.getName());
-
     private static boolean isPartition(String name) {
         return name.startsWith("part") && name.endsWith(".bin");
     }

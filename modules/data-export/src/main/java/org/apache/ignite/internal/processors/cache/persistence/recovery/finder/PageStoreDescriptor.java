@@ -1,15 +1,5 @@
 package org.apache.ignite.internal.processors.cache.persistence.recovery.finder;
 
-public interface PageStoreDescriptor {
-    int partitionId();
-
-    long size();
-
+public interface PageStoreDescriptor extends StoreDescriptor {
     int pageSize();
-
-    int version();
-
-    byte type();
-
-    String cacheOrGroupName();
 }

@@ -10,12 +10,12 @@ import org.apache.ignite.internal.processors.cache.persistence.recovery.PageStor
 import org.apache.ignite.internal.processors.cache.persistence.recovery.PageStoreScanner;
 import org.apache.ignite.internal.util.GridUnsafe;
 
-public class FilePageStoreScanner implements PageStoreScanner {
+public class PartitionPageStoreScanner implements PageStoreScanner {
     private final List<ScanElement> scanElements = new LinkedList<>();
 
     private final PageStore pageStore;
 
-    public FilePageStoreScanner(PageStore pageStore) {
+    public PartitionPageStoreScanner(PageStore pageStore) {
         this.pageStore = pageStore;
     }
 

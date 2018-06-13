@@ -8,8 +8,9 @@ import org.apache.ignite.internal.processors.cache.persistence.recovery.PageIter
 import org.apache.ignite.internal.processors.cache.persistence.recovery.PageStore;
 import org.apache.ignite.internal.processors.cache.persistence.recovery.finder.FilePageStoreDescriptor;
 import org.apache.ignite.internal.processors.cache.persistence.recovery.finder.PageStoreDescriptor;
+import org.apache.ignite.internal.processors.cache.persistence.recovery.finder.StoreDescriptor;
 
-public class RecoveryPageStore implements PageStore {
+public class PartitionPageStore implements PageStore {
 
     private final FileIO fileIO;
 
@@ -21,10 +22,11 @@ public class RecoveryPageStore implements PageStore {
 
     private final PageStoreDescriptor desc;
 
-    public RecoveryPageStore(FilePageStoreDescriptor desc) {
+    public PartitionPageStore(FilePageStoreDescriptor desc) {
         this.desc = desc;
 
-        fileIO = desc.fileIO();
+        // Todo
+        fileIO = null;
         length = desc.size();
         headerSize = desc.pageSize();
         pageSize = desc.pageSize();
