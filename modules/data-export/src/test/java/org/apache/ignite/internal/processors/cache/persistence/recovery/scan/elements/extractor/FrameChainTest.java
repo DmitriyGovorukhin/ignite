@@ -6,6 +6,7 @@ import java.util.LinkedList;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.atomic.AtomicInteger;
+import junit.framework.TestCase;
 import org.apache.ignite.configuration.DataStorageConfiguration;
 import org.apache.ignite.internal.processors.cache.persistence.file.FileIO;
 import org.apache.ignite.internal.processors.cache.persistence.recovery.finder.FilePageStoreDescriptor;
@@ -23,7 +24,7 @@ public class FrameChainTest extends GridCommonAbstractTest {
 
         System.out.println("Total tests:" + cnt.get());
 
-        assertEquals(8 * 7 * 6 * 5 * 4 * 3 * 2, cnt.get());
+        TestCase.assertEquals(8 * 7 * 6 * 5 * 4 * 3 * 2, cnt.get());
     }
 
     private void doTestRecursive(long totalLinks, LinkedList<Long> links, AtomicInteger cnt) {
@@ -70,11 +71,11 @@ public class FrameChainTest extends GridCommonAbstractTest {
         for (Long link : links)
             frameChainBuilder.onNextFrame(link, link == links.size() ? headPayload : fakePayload, link == 1 ? 0 : link - 1);
 
-        assertEquals(sb.toString(), 1, chains.size());
+        TestCase.assertEquals(sb.toString(), 1, chains.size());
 
         Map<Long, Frame> frames = U.field(frameChainBuilder, "frames");
 
-        assertEquals(sb.toString(), 0, frames.size());
+        TestCase.assertEquals(sb.toString(), 0, frames.size());
 
         //Frame head = frames.values().iterator().next();
 

@@ -19,6 +19,7 @@ import org.apache.ignite.internal.util.typedef.internal.U;
 import org.apache.ignite.spi.discovery.tcp.TcpDiscoverySpi;
 import org.apache.ignite.spi.discovery.tcp.ipfinder.TcpDiscoveryIpFinder;
 import org.apache.ignite.spi.discovery.tcp.ipfinder.vm.TcpDiscoveryVmIpFinder;
+import org.apache.ignite.testframework.junits.GridAbstractTest;
 import org.apache.ignite.testframework.junits.common.GridCommonAbstractTest;
 
 public class KeyValueExtractorTest extends GridCommonAbstractTest {
@@ -46,7 +47,7 @@ public class KeyValueExtractorTest extends GridCommonAbstractTest {
         );
 
         cfg.setCacheConfiguration(
-            new CacheConfiguration(DEFAULT_CACHE_NAME)
+            new CacheConfiguration(GridAbstractTest.DEFAULT_CACHE_NAME)
                 .setAffinity(
                     new RendezvousAffinityFunction(false, 1))
         );
@@ -59,7 +60,7 @@ public class KeyValueExtractorTest extends GridCommonAbstractTest {
 
         ig.cluster().active(true);
 
-        IgniteCache<Integer, Integer> cache = ig.cache(DEFAULT_CACHE_NAME);
+        IgniteCache<Integer, Integer> cache = ig.cache(GridAbstractTest.DEFAULT_CACHE_NAME);
 
         for (int i = 0; i < 100_000; i++)
             cache.put(i, -i);

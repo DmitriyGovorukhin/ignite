@@ -5,6 +5,7 @@ import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.nio.file.Paths;
 import java.util.List;
+import junit.framework.TestCase;
 import org.apache.ignite.IgniteCheckedException;
 import org.apache.ignite.configuration.DataStorageConfiguration;
 import org.apache.ignite.internal.pagemem.PageMemory;
@@ -88,7 +89,7 @@ public class PageStoreTest extends GridCommonAbstractTest {
             while (it.hasNext()) {
                 int read = it.next(buf1);
 
-                assertTrue(read > 0);
+                TestCase.assertTrue(read > 0);
 
                 buf1.rewind();
 
