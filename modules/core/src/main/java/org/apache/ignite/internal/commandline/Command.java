@@ -40,10 +40,7 @@ public enum Command {
     CACHE("--cache"),
 
     /** */
-    WAL("--wal"),
-
-    /** */
-    DUMP("--dump");
+    WAL("--wal");
 
     /** */
     private final String text;

@@ -19,7 +19,6 @@ package org.apache.ignite.internal.commandline;
 
 import org.apache.ignite.internal.client.GridClientConfiguration;
 import org.apache.ignite.internal.commandline.cache.CacheArguments;
-import org.apache.ignite.internal.commandline.dump.DumpArguments;
 import org.apache.ignite.internal.visor.tx.VisorTxTaskArg;
 
 /**
@@ -63,11 +62,6 @@ public class Arguments {
     private CacheArguments cacheArgs;
 
     /**
-     * Arguments for --dump subcommand.
-     */
-    private DumpArguments dumpArguments;
-
-    /**
      * Action for WAL command.
      */
     private String walAct;
@@ -99,23 +93,9 @@ public class Arguments {
      * @param pingInterval Ping interval. See {@link GridClientConfiguration#pingInterval}.
      * @param force Force flag.
      */
-    public Arguments(
-        Command cmd,
-        String host,
-        String port,
-        String user,
-        String pwd,
-        String baselineAct,
-        String baselineArgs,
-        VisorTxTaskArg txArg,
-        CacheArguments cacheArgs,
-        String walAct,
-        String walArgs,
-        Long pingTimeout,
-        Long pingInterval,
-        boolean force,
-        DumpArguments dumpArguments
-    ) {
+    public Arguments(Command cmd, String host, String port, String user, String pwd, String baselineAct,
+                     String baselineArgs, VisorTxTaskArg txArg, CacheArguments cacheArgs, String walAct, String walArgs,
+                     Long pingTimeout, Long pingInterval, boolean force) {
         this.cmd = cmd;
         this.host = host;
         this.port = port;
@@ -130,7 +110,6 @@ public class Arguments {
         this.pingTimeout = pingTimeout;
         this.pingInterval = pingInterval;
         this.force = force;
-        this.dumpArguments = dumpArguments;
     }
 
     /**
@@ -233,9 +212,5 @@ public class Arguments {
      */
     public boolean force() {
         return force;
-    }
-
-    public DumpArguments dumpArguments() {
-        return dumpArguments;
     }
 }
