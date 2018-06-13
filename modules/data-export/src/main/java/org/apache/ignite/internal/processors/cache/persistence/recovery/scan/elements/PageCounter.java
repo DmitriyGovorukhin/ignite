@@ -2,8 +2,6 @@ package org.apache.ignite.internal.processors.cache.persistence.recovery.scan.el
 
 import java.nio.ByteBuffer;
 import java.util.concurrent.atomic.AtomicLong;
-import org.apache.ignite.internal.processors.cache.persistence.recovery.finder.PageStoreDescriptor;
-import org.apache.ignite.internal.processors.cache.persistence.recovery.scan.ScanAdapter;
 import org.apache.ignite.internal.processors.cache.persistence.recovery.scan.ScanElement;
 
 public class PageCounter implements ScanElement {
