@@ -22,11 +22,10 @@ public class PartitionPageStore implements PageStore {
 
     private final PageStoreDescriptor desc;
 
-    public PartitionPageStore(FilePageStoreDescriptor desc) {
+    public PartitionPageStore(FilePageStoreDescriptor desc, FileIO fileIO) {
         this.desc = desc;
+        this.fileIO = fileIO;
 
-        // Todo
-        fileIO = null;
         length = desc.size();
         headerSize = desc.pageSize();
         pageSize = desc.pageSize();

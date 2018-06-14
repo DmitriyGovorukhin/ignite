@@ -69,9 +69,10 @@ public class FilePageStoreFinder extends PageStoreFinder<FilePageStoreDescriptor
                 }
 
                 @Override public String toString() {
-                    return file.getAbsolutePath() + "\n" + "name " + cacheOrGroupName
-                        + " idx " + partitionIndex + " type " + type + " size " + size
-                        + " version " + version + " ";
+                    return file.getAbsolutePath() + "\nname " + cacheOrGroupName
+                        + "\nidx " + partitionIndex + "\ntype " + type
+                        + "\nsize " + size + "\npageSize " + pageSize
+                        + "\nversion " + version;
                 }
             };
 

@@ -77,7 +77,7 @@ public class PageStoreTest extends GridCommonAbstractTest {
 
         List<FilePageStoreDescriptor> stores = storeFinder.findStores(U.defaultWorkDirectory());
 
-        PartitionPageStore partitionPageStore = new PartitionPageStore(stores.get(0));
+        PartitionPageStore partitionPageStore = new PartitionPageStore(stores.get(0), null);
 
         PageIterator it = partitionPageStore.iterator();
 

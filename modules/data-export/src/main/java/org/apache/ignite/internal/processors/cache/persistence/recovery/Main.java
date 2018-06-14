@@ -1,5 +1,6 @@
 package org.apache.ignite.internal.processors.cache.persistence.recovery;
 
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Map;
 import org.apache.ignite.IgniteCheckedException;
@@ -20,6 +21,8 @@ public class Main {
 
             return;
         }
+
+        System.out.println(Arrays.toString(args));
 
         String command = args[0];
 

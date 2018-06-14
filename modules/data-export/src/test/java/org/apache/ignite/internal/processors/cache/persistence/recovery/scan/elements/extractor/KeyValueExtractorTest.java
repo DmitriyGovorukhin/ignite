@@ -73,7 +73,7 @@ public class KeyValueExtractorTest extends GridCommonAbstractTest {
 
         FilePageStoreDescriptor desc = stores.get(1);
 
-        PartitionPageStore partitionPageStore = new PartitionPageStore(desc);
+        PartitionPageStore partitionPageStore = new PartitionPageStore(desc,null);
 
         PartitionPageStoreScanner scanner = new PartitionPageStoreScanner(partitionPageStore);
 
