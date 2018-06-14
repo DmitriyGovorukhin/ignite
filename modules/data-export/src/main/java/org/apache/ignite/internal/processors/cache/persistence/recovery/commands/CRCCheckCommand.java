@@ -7,6 +7,7 @@ import java.util.List;
 import org.apache.ignite.internal.processors.cache.persistence.file.AsyncFileIOFactory;
 import org.apache.ignite.internal.processors.cache.persistence.file.FileIO;
 import org.apache.ignite.internal.processors.cache.persistence.file.FileIOFactory;
+import org.apache.ignite.internal.processors.cache.persistence.file.FilePageStore;
 import org.apache.ignite.internal.processors.cache.persistence.recovery.PageStore;
 import org.apache.ignite.internal.processors.cache.persistence.recovery.finder.FilePageStoreDescriptor;
 import org.apache.ignite.internal.processors.cache.persistence.recovery.finder.FilePageStoreFinder;
@@ -23,12 +24,15 @@ public class CRCCheckCommand implements Command {
     private final FileIOFactory ioFactory = new AsyncFileIOFactory();
 
     @Override public void execute(String... args) {
-        System.out.println("start CRC checking... ");
 
         for (FilePageStoreDescriptor desc : resolvePageStoreDescriptors(args)) {
+            System.out.println("start CRC checking... ");
+
             System.out.println(desc);
 
             checkCRC(desc);
+
+            System.out.println("CRC checking finished...\n");
         }
     }
 
@@ -41,7 +45,12 @@ public class CRCCheckCommand implements Command {
             CorruptedPages corruptedPageCounter = new CorruptedPages(desc);
             PageCounter pageCounter = new PageCounter();
             TimeTracker timeTracker = new TimeTracker();
-            ProgressBar progressBar = new ProgressBar(desc.pageSize(), desc.size());
+            ProgressBar progressBar = new ProgressBar(
+                desc.pageSize(),
+                desc.version() == 2 ?
+                    desc.size() - desc.pageSize() :
+                    desc.size() - FilePageStore.HEADER_SIZE
+            );
 
             pageStoreScanner.addHandler(corruptedPageCounter);
             pageStoreScanner.addHandler(pageCounter);
@@ -49,8 +58,6 @@ public class CRCCheckCommand implements Command {
             pageStoreScanner.addHandler(progressBar);
 
             pageStoreScanner.scan();
-
-            System.out.println("CRC checking finished...");
 
             System.out.println("total execution time: " + (timeTracker.endTime() - timeTracker.startTime()));
             System.out.println("total scanned pages: " + pageCounter.pages());
