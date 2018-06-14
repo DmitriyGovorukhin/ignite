@@ -9,7 +9,7 @@ public class HelpCommand implements Command {
 
         sb.a("-f --find - find page stores").a("\n");
         sb.a("-c --crc - check pages crc").a("\n");
-        sb.a("-e --export = [outPath] - export key/value pair to file").a("\n");
+        sb.a("-e --export - export key/value pair to file").a("\n");
         sb.a("-r --restore - restore binary consistence").a("\n");
 
         System.out.println(sb);
