@@ -1,14 +1,15 @@
 Apache Ignite Export Data Tool
 ------------------------
 
---find [path] - find page stores
+-f --find - find page stores
 
---crc - check pages crc
+-c --crc - check pages crc
 
---export [output dir path] - export key/value pair to file
+-e --export [outPath] - export key/value pair to file
 
---restore - restore binary consistence
+-r --restore - restore binary consistence
 
-[path] | [path0 path1 path2] | [cacheName:part] | [cacheName:0..N] | [cacheName:0..] | [cacheName:..N]
-default - all
+All command accept arguments paths to file or directories - [path | path0 path1 path2]. If path is not specific,
+we start execute command from IGNITE_HOME/work as default.
+
 
