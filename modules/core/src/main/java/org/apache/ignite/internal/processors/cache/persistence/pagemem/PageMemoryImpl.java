@@ -23,6 +23,7 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -1000,9 +1001,11 @@ public class PageMemoryImpl implements PageMemoryEx {
             if (seg.segCheckpointPages != null)
                 throw new IgniteException("Failed to begin checkpoint (it is already in progress).");
 
-            collections[i] = seg.segCheckpointPages = seg.dirtyPages;
+            DirtyPages dirtySet = seg.segCheckpointPages = seg.dirtyPages;
 
-            seg.dirtyPages = new GridConcurrentHashSet<>();
+            collections[i] = dirtySet.toCollection();
+
+            seg.dirtyPages = new DirtyPagesConcurrentSet();
         }
 
         memMetrics.resetDirtyPages();
@@ -1519,7 +1522,7 @@ public class PageMemoryImpl implements PageMemoryEx {
     boolean isInCheckpoint(FullPageId pageId) {
         Segment seg = segment(pageId.groupId(), pageId.pageId());
 
-        Collection<FullPageId> pages0 = seg.segCheckpointPages;
+        DirtyPages pages0 = seg.segCheckpointPages;
 
         return pages0 != null && pages0.contains(pageId);
     }
@@ -1531,7 +1534,7 @@ public class PageMemoryImpl implements PageMemoryEx {
     boolean clearCheckpoint(FullPageId fullPageId) {
         Segment seg = segment(fullPageId.groupId(), fullPageId.pageId());
 
-        Collection<FullPageId> pages0 = seg.segCheckpointPages;
+        DirtyPages pages0 = seg.segCheckpointPages;
 
         assert pages0 != null;
 
@@ -1850,10 +1853,10 @@ public class PageMemoryImpl implements PageMemoryEx {
         private long memPerTbl;
 
         /** Pages marked as dirty since the last checkpoint. */
-        private Collection<FullPageId> dirtyPages = new GridConcurrentHashSet<>();
+        private DirtyPages dirtyPages = new DirtyPagesConcurrentSet();
 
         /** */
-        private volatile Collection<FullPageId> segCheckpointPages;
+        private volatile DirtyPages segCheckpointPages;
 
         /** */
         private final int maxDirtyPages;
@@ -2002,7 +2005,7 @@ public class PageMemoryImpl implements PageMemoryEx {
             if (PageHeader.isAcquired(absPtr))
                 return false;
 
-            Collection<FullPageId> cpPages = segCheckpointPages;
+            DirtyPages cpPages = segCheckpointPages;
 
             clearRowCache(fullPageId, absPtr);
 
@@ -2742,6 +2745,43 @@ public class PageMemoryImpl implements PageMemoryEx {
             catch (Throwable e) {
                 doneFut.onDone(e);
             }
+        }
+    }
+
+    private interface DirtyPages  {
+        boolean add(FullPageId pageId);
+
+        boolean remove(FullPageId pageId);
+
+        boolean contains(FullPageId pageId);
+
+        Collection<FullPageId> toCollection();
+
+        int size();
+    }
+
+    private static class DirtyPagesConcurrentSet implements DirtyPages {
+        /** Pages marked as dirty since the last checkpoint. */
+        private final Collection<FullPageId> dirtyPages = new GridConcurrentHashSet<>();
+
+        @Override public boolean add(FullPageId pageId) {
+            return dirtyPages.add(pageId);
+        }
+
+        @Override public boolean remove(FullPageId pageId) {
+            return dirtyPages.remove(pageId);
+        }
+
+        @Override public boolean contains(FullPageId pageId) {
+            return false;
+        }
+
+        @Override public Collection<FullPageId> toCollection() {
+            return dirtyPages;
+        }
+
+        @Override public int size() {
+            return dirtyPages.size();
         }
     }
 
