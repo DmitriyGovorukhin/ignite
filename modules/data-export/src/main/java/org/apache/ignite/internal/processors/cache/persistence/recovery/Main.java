@@ -7,8 +7,9 @@ import org.apache.ignite.IgniteCheckedException;
 import org.apache.ignite.internal.processors.cache.persistence.recovery.commands.CRCCheckCommand;
 import org.apache.ignite.internal.processors.cache.persistence.recovery.commands.Command;
 import org.apache.ignite.internal.processors.cache.persistence.recovery.commands.DataExportCommand;
-import org.apache.ignite.internal.processors.cache.persistence.recovery.commands.FindStoreCommand;
+import org.apache.ignite.internal.processors.cache.persistence.recovery.commands.CheckState;
 import org.apache.ignite.internal.processors.cache.persistence.recovery.commands.HelpCommand;
+import org.apache.ignite.internal.processors.cache.persistence.recovery.commands.RestoreBinaryStateCommand;
 import org.apache.ignite.internal.util.typedef.F;
 
 import static java.util.Arrays.copyOfRange;
@@ -28,10 +29,11 @@ public class Main {
 
         Map<String, Command> COMMANDS = new HashMap<>();
 
-        COMMANDS.put("--find", new FindStoreCommand());
+        COMMANDS.put("--state", new CheckState());
         COMMANDS.put("--export", new DataExportCommand());
         COMMANDS.put("--crc", new CRCCheckCommand());
         COMMANDS.put("--help", new HelpCommand());
+        COMMANDS.put("--restore", new RestoreBinaryStateCommand());
 
         Command cmd = COMMANDS.get(command);
 

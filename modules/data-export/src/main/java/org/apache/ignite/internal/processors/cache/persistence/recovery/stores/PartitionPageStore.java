@@ -6,9 +6,7 @@ import org.apache.ignite.internal.pagemem.PageIdUtils;
 import org.apache.ignite.internal.processors.cache.persistence.file.FileIO;
 import org.apache.ignite.internal.processors.cache.persistence.recovery.PageIterator;
 import org.apache.ignite.internal.processors.cache.persistence.recovery.PageStore;
-import org.apache.ignite.internal.processors.cache.persistence.recovery.finder.FilePageStoreDescriptor;
-import org.apache.ignite.internal.processors.cache.persistence.recovery.finder.PageStoreDescriptor;
-import org.apache.ignite.internal.processors.cache.persistence.recovery.finder.StoreDescriptor;
+import org.apache.ignite.internal.processors.cache.persistence.recovery.finder.descriptors.PageStoreDescriptor;
 
 public class PartitionPageStore implements PageStore {
 
@@ -22,7 +20,7 @@ public class PartitionPageStore implements PageStore {
 
     private final PageStoreDescriptor desc;
 
-    public PartitionPageStore(FilePageStoreDescriptor desc, FileIO fileIO) {
+    public PartitionPageStore(PageStoreDescriptor desc, FileIO fileIO) {
         this.desc = desc;
         this.fileIO = fileIO;
 

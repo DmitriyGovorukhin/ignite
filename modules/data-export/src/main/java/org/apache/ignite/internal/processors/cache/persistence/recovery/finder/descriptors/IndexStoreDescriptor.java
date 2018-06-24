@@ -1,0 +1,11 @@
+package org.apache.ignite.internal.processors.cache.persistence.recovery.finder.descriptors;
+
+import org.apache.ignite.internal.processors.cache.persistence.recovery.finder.Finder.Descriptor;
+
+public interface IndexStoreDescriptor extends Descriptor {
+    long size();
+
+    int version();
+
+    int pageSize();
+}

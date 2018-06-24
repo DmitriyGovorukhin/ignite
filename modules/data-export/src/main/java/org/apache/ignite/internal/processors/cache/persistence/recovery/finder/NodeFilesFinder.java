@@ -9,13 +9,41 @@ import org.apache.ignite.configuration.DataStorageConfiguration;
 import org.apache.ignite.internal.processors.cache.persistence.file.FileIO;
 import org.apache.ignite.internal.processors.cache.persistence.file.FileIOFactory;
 import org.apache.ignite.internal.processors.cache.persistence.file.FilePageStore;
-import org.apache.ignite.internal.processors.cache.persistence.recovery.PageStoreFinder;
+import org.apache.ignite.internal.processors.cache.persistence.recovery.finder.descriptors.PageStoreDescriptor;
 
-public class FilePageStoreFinder extends PageStoreFinder<FilePageStoreDescriptor> {
+public class NodeFilesFinder extends Finder<Finder.Descriptor> {
 
     private final FileIOFactory ioFactory = new DataStorageConfiguration().getFileIOFactory();
 
-    @Override protected FilePageStoreDescriptor createDescriptor(File file) {
+
+    @Override protected Type fileType(File file) {
+        String name = file.getName();
+
+        if (isPartition(name))
+            return Type.PAGE_STORE;
+
+        return null;
+    }
+
+    @Override protected Descriptor createDescriptor(File file, Type type) {
+        switch (type){
+            case PAGE_STORE:
+                return createPageStoreDescriptor(file);
+            case CP:
+        }
+        return null;
+    }
+
+
+    private static boolean isCheckpointFile(String name){
+        return name.startsWith("part") && name.endsWith(".bin");
+    }
+
+    private static boolean isPartition(String name) {
+        return name.startsWith("part") && name.endsWith(".bin");
+    }
+
+    private PageStoreDescriptor createPageStoreDescriptor(File file) {
         try (FileIO fileIO = ioFactory.create(file, StandardOpenOption.READ)) {
             int header = FilePageStore.HEADER_SIZE;
 
@@ -39,7 +67,7 @@ public class FilePageStoreFinder extends PageStoreFinder<FilePageStoreDescriptor
 
             int partitionIndex = partitionIndex(file.getName());
 
-            return new FilePageStoreDescriptor() {
+            return new PageStoreDescriptor() {
                 @Override public File file() {
                     return file;
                 }
@@ -60,8 +88,8 @@ public class FilePageStoreFinder extends PageStoreFinder<FilePageStoreDescriptor
                     return version;
                 }
 
-                @Override public byte type() {
-                    return type;
+                @Override public Type type() {
+                    return Type.PAGE_STORE;
                 }
 
                 @Override public String cacheOrGroupName() {
@@ -80,5 +108,12 @@ public class FilePageStoreFinder extends PageStoreFinder<FilePageStoreDescriptor
         catch (IOException e) {
             return null;
         }
+    }
+
+
+    protected static int partitionIndex(String fileName) {
+        String[] split = fileName.split("-");
+
+        return Integer.valueOf(split[1].substring(0, split[1].indexOf(".bin")));
     }
 }
