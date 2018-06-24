@@ -9,9 +9,10 @@ import org.apache.ignite.configuration.CacheConfiguration;
 import org.apache.ignite.configuration.DataRegionConfiguration;
 import org.apache.ignite.configuration.DataStorageConfiguration;
 import org.apache.ignite.configuration.IgniteConfiguration;
+import org.apache.ignite.internal.processors.cache.persistence.recovery.finder.Finder;
+import org.apache.ignite.internal.processors.cache.persistence.recovery.finder.NodeFilesFinder;
+import org.apache.ignite.internal.processors.cache.persistence.recovery.finder.descriptors.PageStoreDescriptor;
 import org.apache.ignite.internal.processors.cache.persistence.recovery.stores.PartitionPageStore;
-import org.apache.ignite.internal.processors.cache.persistence.recovery.finder.FilePageStoreDescriptor;
-import org.apache.ignite.internal.processors.cache.persistence.recovery.finder.FilePageStoreFinder;
 import org.apache.ignite.internal.processors.cache.persistence.recovery.scan.PartitionPageStoreScanner;
 import org.apache.ignite.internal.processors.cache.persistence.recovery.scan.elements.PageCounter;
 import org.apache.ignite.internal.processors.cache.persistence.recovery.scan.elements.PagesByType;
@@ -67,11 +68,11 @@ public class KeyValueExtractorTest extends GridCommonAbstractTest {
 
         stopGrid(0, false);
 
-        FilePageStoreFinder storeFinder = new FilePageStoreFinder();
+        NodeFilesFinder storeFinder = new NodeFilesFinder();
 
-        List<FilePageStoreDescriptor> stores = storeFinder.findStores(U.defaultWorkDirectory());
+        List<Finder.Descriptor> stores = storeFinder.find(U.defaultWorkDirectory());
 
-        FilePageStoreDescriptor desc = stores.get(1);
+        PageStoreDescriptor desc = (PageStoreDescriptor)stores.get(1);
 
         PartitionPageStore partitionPageStore = new PartitionPageStore(desc,null);
 

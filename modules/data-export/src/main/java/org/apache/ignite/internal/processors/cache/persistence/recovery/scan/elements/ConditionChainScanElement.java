@@ -1,7 +1,7 @@
 package org.apache.ignite.internal.processors.cache.persistence.recovery.scan.elements;
 
 import java.nio.ByteBuffer;
-import org.apache.ignite.internal.processors.cache.persistence.recovery.finder.StoreDescriptor;
+import org.apache.ignite.internal.processors.cache.persistence.recovery.finder.descriptors.PageStoreDescriptor;
 import org.apache.ignite.internal.processors.cache.persistence.recovery.scan.ConditionScanElement;
 import org.apache.ignite.internal.processors.cache.persistence.recovery.scan.ScanAdapter;
 
@@ -10,7 +10,7 @@ public class ConditionChainScanElement<A extends ScanAdapter, B extends Conditio
     private final A next;
     private final B condition;
 
-    public ConditionChainScanElement(StoreDescriptor descriptor, A next, B condition) {
+    public ConditionChainScanElement(PageStoreDescriptor descriptor, A next, B condition) {
         super(descriptor);
         this.next = next;
         this.condition = condition;

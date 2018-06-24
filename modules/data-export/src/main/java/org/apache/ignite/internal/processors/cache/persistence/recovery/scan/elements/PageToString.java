@@ -8,7 +8,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import org.apache.ignite.IgniteCheckedException;
-import org.apache.ignite.internal.processors.cache.persistence.recovery.finder.StoreDescriptor;
+import org.apache.ignite.internal.processors.cache.persistence.recovery.finder.descriptors.PageStoreDescriptor;
 import org.apache.ignite.internal.processors.cache.persistence.recovery.scan.ScanAdapter;
 import org.apache.ignite.internal.processors.cache.persistence.tree.io.PageIO;
 import sun.nio.ch.DirectBuffer;
@@ -20,7 +20,7 @@ public class PageToString extends ScanAdapter {
 
     private final Map<Integer, List<String>> stringPages = new HashMap<>();
 
-    public PageToString(StoreDescriptor descriptor, int... types) {
+    public PageToString(PageStoreDescriptor descriptor, int... types) {
         super(descriptor);
 
         printPagesByType = new HashSet<>();

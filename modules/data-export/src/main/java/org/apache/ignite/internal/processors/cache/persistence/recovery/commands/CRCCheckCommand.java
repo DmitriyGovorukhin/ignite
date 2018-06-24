@@ -3,7 +3,6 @@ package org.apache.ignite.internal.processors.cache.persistence.recovery.command
 import java.io.IOException;
 import java.nio.file.StandardOpenOption;
 import java.util.ArrayList;
-import java.util.Collection;
 import java.util.List;
 import org.apache.ignite.internal.processors.cache.persistence.file.AsyncFileIOFactory;
 import org.apache.ignite.internal.processors.cache.persistence.file.FileIO;
@@ -28,12 +27,12 @@ public class CRCCheckCommand implements Command {
     private final FileIOFactory ioFactory = new AsyncFileIOFactory();
 
     @Override public void execute(String... args) {
-        for (PageStoreDescriptor desc : resolvePageStoreDescriptors(args)) {
+        for (Finder.Descriptor desc : resolvePageStoreDescriptors(args)) {
             System.out.println("start CRC checking... ");
 
             System.out.println(desc);
 
-            checkCRC(desc);
+            checkCRC((PageStoreDescriptor)desc);
 
             System.out.println("CRC checking finished...\n");
         }
@@ -73,11 +72,11 @@ public class CRCCheckCommand implements Command {
         }
     }
 
-    private List<PageStoreDescriptor> resolvePageStoreDescriptors(String... paths) {
-        List<PageStoreDescriptor> res = new ArrayList<>();
+    private List<Finder.Descriptor> resolvePageStoreDescriptors(String... paths) {
+        List<Finder.Descriptor> res = new ArrayList<>();
 
         for (String path : paths)
-            res.addAll((Collection<? extends PageStoreDescriptor>)storeFinder.find(path, PAGE_STORE));
+            res.addAll(storeFinder.find(path, PAGE_STORE));
 
         return res;
     }

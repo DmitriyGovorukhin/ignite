@@ -10,6 +10,7 @@ import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
+import org.apache.ignite.internal.util.typedef.F;
 
 import static java.nio.file.Files.walkFileTree;
 import static java.nio.file.Paths.get;
@@ -18,6 +19,9 @@ import static java.util.Arrays.asList;
 public abstract class Finder<T extends Finder.Descriptor> {
 
     public List<T> find(String path, Type... t) {
+        if (F.isEmpty(t))
+            t = Type.values();
+
         List<T> res = new ArrayList<>();
 
         Set<Type> types = new HashSet<>(asList(t));
@@ -36,7 +40,7 @@ public abstract class Finder<T extends Finder.Descriptor> {
                 }
             });
         }
-        catch (IOException ignored) {
+        catch (IOException e) {
 
         }
 

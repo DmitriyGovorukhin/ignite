@@ -8,7 +8,7 @@ import java.util.Map;
 import java.util.function.Consumer;
 import org.apache.ignite.internal.pagemem.PageIdUtils;
 import org.apache.ignite.internal.pagemem.PageUtils;
-import org.apache.ignite.internal.processors.cache.persistence.recovery.finder.StoreDescriptor;
+import org.apache.ignite.internal.processors.cache.persistence.recovery.finder.descriptors.PageStoreDescriptor;
 import org.apache.ignite.internal.processors.cache.persistence.recovery.scan.ScanAdapter;
 import org.apache.ignite.internal.processors.cache.persistence.tree.io.DataPageIO;
 import org.apache.ignite.internal.processors.cache.persistence.tree.io.DataPagePayload;
@@ -22,7 +22,7 @@ public class FrameChainBuilder extends ScanAdapter {
 
     private final List<Consumer<Frame>> frameConsumers = new LinkedList<>();
 
-    public FrameChainBuilder(StoreDescriptor descriptor) {
+    public FrameChainBuilder(PageStoreDescriptor descriptor) {
         super(descriptor);
     }
 

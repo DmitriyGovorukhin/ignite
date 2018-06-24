@@ -13,8 +13,10 @@ import org.apache.ignite.internal.processors.cache.persistence.AllocatedPageTrac
 import org.apache.ignite.internal.processors.cache.persistence.file.FilePageStore;
 import org.apache.ignite.internal.processors.cache.persistence.file.FilePageStoreFactory;
 import org.apache.ignite.internal.processors.cache.persistence.file.FileVersionCheckingFactory;
-import org.apache.ignite.internal.processors.cache.persistence.recovery.finder.FilePageStoreDescriptor;
-import org.apache.ignite.internal.processors.cache.persistence.recovery.finder.FilePageStoreFinder;
+
+import org.apache.ignite.internal.processors.cache.persistence.recovery.finder.Finder;
+import org.apache.ignite.internal.processors.cache.persistence.recovery.finder.NodeFilesFinder;
+import org.apache.ignite.internal.processors.cache.persistence.recovery.finder.descriptors.PageStoreDescriptor;
 import org.apache.ignite.internal.processors.cache.persistence.recovery.stores.PartitionPageStore;
 import org.apache.ignite.internal.processors.cache.persistence.tree.io.DataPageIO;
 import org.apache.ignite.internal.processors.cache.persistence.tree.io.PageIO;
@@ -22,6 +24,8 @@ import org.apache.ignite.internal.util.GridUnsafe;
 import org.apache.ignite.internal.util.typedef.internal.U;
 import org.apache.ignite.testframework.junits.common.GridCommonAbstractTest;
 import org.junit.Assert;
+
+import static org.apache.ignite.internal.processors.cache.persistence.recovery.finder.Finder.Type.PAGE_STORE;
 
 public class PageStoreTest extends GridCommonAbstractTest {
     private static final AllocatedPageTracker NOOP_TRACKER = (delta) -> {
@@ -73,11 +77,11 @@ public class PageStoreTest extends GridCommonAbstractTest {
             GridUnsafe.freeBuffer(buf0);
         }
 
-        FilePageStoreFinder storeFinder = new FilePageStoreFinder();
+        NodeFilesFinder storeFinder = new NodeFilesFinder();
 
-        List<FilePageStoreDescriptor> stores = storeFinder.findStores(U.defaultWorkDirectory());
+        List<Finder.Descriptor> stores = storeFinder.find(U.defaultWorkDirectory(), PAGE_STORE);
 
-        PartitionPageStore partitionPageStore = new PartitionPageStore(stores.get(0), null);
+        PartitionPageStore partitionPageStore = new PartitionPageStore((PageStoreDescriptor)stores.get(0), null);
 
         PageIterator it = partitionPageStore.iterator();
 

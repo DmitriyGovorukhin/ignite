@@ -8,9 +8,12 @@ import java.util.Set;
 import java.util.concurrent.atomic.AtomicInteger;
 import junit.framework.TestCase;
 import org.apache.ignite.configuration.DataStorageConfiguration;
-import org.apache.ignite.internal.processors.cache.persistence.recovery.finder.FilePageStoreDescriptor;
+import org.apache.ignite.internal.processors.cache.persistence.recovery.finder.Finder;
+import org.apache.ignite.internal.processors.cache.persistence.recovery.finder.descriptors.PageStoreDescriptor;
 import org.apache.ignite.internal.util.typedef.internal.U;
 import org.apache.ignite.testframework.junits.common.GridCommonAbstractTest;
+
+import static org.apache.ignite.internal.processors.cache.persistence.recovery.finder.Finder.Type.PAGE_STORE;
 
 public class FrameChainTest extends GridCommonAbstractTest {
 
@@ -102,8 +105,8 @@ public class FrameChainTest extends GridCommonAbstractTest {
         }
     }
 
-    private FilePageStoreDescriptor createMockDescriptor() {
-        return new FilePageStoreDescriptor() {
+    private PageStoreDescriptor createMockDescriptor() {
+        return new PageStoreDescriptor() {
             @Override public File file() {
                 return null;
             }
@@ -124,8 +127,8 @@ public class FrameChainTest extends GridCommonAbstractTest {
                 return 0;
             }
 
-            @Override public byte type() {
-                return 0;
+            @Override public Finder.Type type() {
+                return PAGE_STORE;
             }
 
             @Override public String cacheOrGroupName() {
