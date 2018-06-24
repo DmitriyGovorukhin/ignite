@@ -3,14 +3,16 @@ package org.apache.ignite.internal.processors.cache.persistence.recovery.command
 import java.io.IOException;
 import java.nio.file.StandardOpenOption;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.List;
 import org.apache.ignite.internal.processors.cache.persistence.file.AsyncFileIOFactory;
 import org.apache.ignite.internal.processors.cache.persistence.file.FileIO;
 import org.apache.ignite.internal.processors.cache.persistence.file.FileIOFactory;
 import org.apache.ignite.internal.processors.cache.persistence.file.FilePageStore;
 import org.apache.ignite.internal.processors.cache.persistence.recovery.PageStore;
-import org.apache.ignite.internal.processors.cache.persistence.recovery.finder.FilePageStoreDescriptor;
-import org.apache.ignite.internal.processors.cache.persistence.recovery.finder.FilePageStoreFinder;
+import org.apache.ignite.internal.processors.cache.persistence.recovery.finder.Finder;
+import org.apache.ignite.internal.processors.cache.persistence.recovery.finder.NodeFilesFinder;
+import org.apache.ignite.internal.processors.cache.persistence.recovery.finder.descriptors.PageStoreDescriptor;
 import org.apache.ignite.internal.processors.cache.persistence.recovery.scan.PartitionPageStoreScanner;
 import org.apache.ignite.internal.processors.cache.persistence.recovery.scan.elements.CorruptedPages;
 import org.apache.ignite.internal.processors.cache.persistence.recovery.scan.elements.PageCounter;
@@ -18,14 +20,15 @@ import org.apache.ignite.internal.processors.cache.persistence.recovery.scan.ele
 import org.apache.ignite.internal.processors.cache.persistence.recovery.scan.elements.TimeTracker;
 import org.apache.ignite.internal.processors.cache.persistence.recovery.stores.PartitionPageStore;
 
+import static org.apache.ignite.internal.processors.cache.persistence.recovery.finder.Finder.Type.PAGE_STORE;
+
 public class CRCCheckCommand implements Command {
-    private final FilePageStoreFinder storeFinder = new FilePageStoreFinder();
+    private final NodeFilesFinder storeFinder = new NodeFilesFinder();
 
     private final FileIOFactory ioFactory = new AsyncFileIOFactory();
 
     @Override public void execute(String... args) {
-
-        for (FilePageStoreDescriptor desc : resolvePageStoreDescriptors(args)) {
+        for (PageStoreDescriptor desc : resolvePageStoreDescriptors(args)) {
             System.out.println("start CRC checking... ");
 
             System.out.println(desc);
@@ -36,7 +39,7 @@ public class CRCCheckCommand implements Command {
         }
     }
 
-    private void checkCRC(FilePageStoreDescriptor desc) {
+    private void checkCRC(PageStoreDescriptor desc) {
         try (FileIO fileIO = ioFactory.create(desc.file(), StandardOpenOption.READ)) {
             PageStore pageStore = new PartitionPageStore(desc, fileIO);
 
@@ -70,11 +73,11 @@ public class CRCCheckCommand implements Command {
         }
     }
 
-    private List<FilePageStoreDescriptor> resolvePageStoreDescriptors(String... paths) {
-        List<FilePageStoreDescriptor> res = new ArrayList<>();
+    private List<PageStoreDescriptor> resolvePageStoreDescriptors(String... paths) {
+        List<PageStoreDescriptor> res = new ArrayList<>();
 
         for (String path : paths)
-            res.addAll(storeFinder.findStores(path));
+            res.addAll((Collection<? extends PageStoreDescriptor>)storeFinder.find(path, PAGE_STORE));
 
         return res;
     }
