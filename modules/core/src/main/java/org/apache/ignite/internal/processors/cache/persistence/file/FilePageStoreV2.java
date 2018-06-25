@@ -34,18 +34,18 @@ public class FilePageStoreV2 extends FilePageStore {
      * @param type Type.
      * @param file File.
      * @param factory Factory.
-     * @param cfg Config.
      * @param allocatedTracker Metrics updater
      */
     public FilePageStoreV2(
         byte type,
         File file,
         FileIOFactory factory,
-        DataStorageConfiguration cfg,
-        AllocatedPageTracker allocatedTracker) {
-        super(type, file, factory, cfg, allocatedTracker);
+        int pageSize,
+        AllocatedPageTracker allocatedTracker
+    ) {
+        super(type, file, factory, pageSize, allocatedTracker);
 
-        hdrSize = cfg.getPageSize();
+        hdrSize = pageSize;
     }
 
     /** {@inheritDoc} */

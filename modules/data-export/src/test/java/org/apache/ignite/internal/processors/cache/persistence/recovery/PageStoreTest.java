@@ -44,7 +44,7 @@ public class PageStoreTest extends GridCommonAbstractTest {
 
         dsCfg.setPageSize(DataStorageConfiguration.DFLT_PAGE_SIZE);
 
-        FilePageStoreFactory f = new FileVersionCheckingFactory(dsCfg.getFileIOFactory(), dsCfg);
+        FilePageStoreFactory f = new FileVersionCheckingFactory(dsCfg.getFileIOFactory(), dsCfg.getPageSize());
 
         File file = new File(workDir, "part-0.bin");
 

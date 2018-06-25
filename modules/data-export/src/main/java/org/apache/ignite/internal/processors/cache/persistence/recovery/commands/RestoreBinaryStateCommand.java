@@ -3,10 +3,13 @@ package org.apache.ignite.internal.processors.cache.persistence.recovery.command
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
 import java.util.Collection;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
-import java.util.UUID;
+import java.util.Map;
+import java.util.function.Function;
 import org.apache.ignite.IgniteCheckedException;
+import org.apache.ignite.IgniteException;
 import org.apache.ignite.configuration.DataRegionConfiguration;
 import org.apache.ignite.configuration.DataStorageConfiguration;
 import org.apache.ignite.internal.mem.DirectMemoryProvider;
@@ -26,46 +29,59 @@ import org.apache.ignite.internal.pagemem.wal.record.delta.PartitionMetaStateRec
 import org.apache.ignite.internal.processors.cache.persistence.DataRegionMetricsImpl;
 import org.apache.ignite.internal.processors.cache.persistence.pagemem.PageMemoryEx;
 import org.apache.ignite.internal.processors.cache.persistence.pagemem.PageMemoryImpl;
-import org.apache.ignite.internal.processors.cache.persistence.recovery.finder.Finder.Descriptor;
-import org.apache.ignite.internal.processors.cache.persistence.recovery.finder.NodeFilesFinder;
 import org.apache.ignite.internal.util.GridMultiCollectionWrapper;
+import org.apache.ignite.internal.util.typedef.T3;
 import org.apache.ignite.lang.IgniteBiTuple;
 
-import static java.util.stream.Collectors.toList;
-import static org.apache.ignite.internal.processors.cache.persistence.recovery.finder.Finder.Type.CP;
-import static org.apache.ignite.internal.processors.cache.persistence.recovery.finder.Finder.Type.WAL;
+import static org.apache.ignite.internal.pagemem.PageIdUtils.partId;
 
 public class RestoreBinaryStateCommand implements Command {
 
     @Override public void execute(String... args) {
-        NodeFilesFinder finder = new NodeFilesFinder();
-
-        List<Descriptor> files = finder.find("root", CP, WAL);
-
-        List<Descriptor> chps = files.stream().filter(desc -> desc.type() == CP).collect(toList());
-        List<Descriptor> WALS = files.stream().filter(desc -> desc.type() == WAL).collect(toList());
-
-        PageMemoryEx pageMemoryEx = createMemory();
-
-        try (WALIterator it = null) {
-            applyBinaryUpdates(it, pageMemoryEx);
-        }
-        catch (IgniteCheckedException e) {
-
-        }
+        String WALDir = args[0];
+        String CPFDir = args[1];
+        String pageStoreDir = args[2];
 
         try {
-            finalizeCheckpointOnRecovery(0, null, null, pageMemoryEx);
+            PageMemoryEx pageMemoryEx = createMemory();
+
+            try (WALIterator it = null) {
+                applyBinaryUpdates(it, pageMemoryEx);
+            }
+
+            Map<Integer, List<PageStore>> pageStores = initPageStores(pageStoreDir);
+
+            writeDirtyPages(pageMemoryEx, (tup) -> {
+                FullPageId fullPageId = tup.get1();
+
+                ByteBuffer buf = tup.get2();
+
+                int tag = tup.get3();
+
+                int partId = partId(fullPageId.pageId());
+
+                List<PageStore> stores = pageStores.get(fullPageId.groupId());
+
+                PageStore pageStore = stores.get(partId);
+
+                try {
+                    pageStore.write(partId, buf, tag, true);
+                }
+                catch (IgniteCheckedException e) {
+                    throw new IgniteException(e);
+                }
+
+                return pageStore;
+            });
         }
         catch (IgniteCheckedException e) {
 
         }
+
     }
 
     private void applyBinaryUpdates(WALIterator it, PageMemoryEx pageMem) throws IgniteCheckedException {
         boolean apply = true;
-
-        int applied = 0;
 
         while (it.hasNextX()) {
             IgniteBiTuple<WALPointer, WALRecord> tup = it.nextX();
@@ -102,8 +118,6 @@ public class RestoreBinaryStateCommand implements Command {
                         finally {
                             pageMem.releasePage(grpId, pageId, page);
                         }
-
-                        applied++;
                     }
 
                     break;
@@ -143,8 +157,6 @@ public class RestoreBinaryStateCommand implements Command {
                         finally {
                             pageMem.releasePage(grpId, pageId, page);
                         }
-
-                        applied++;
                     }
             }
         }
@@ -153,21 +165,17 @@ public class RestoreBinaryStateCommand implements Command {
     /**
      * @throws IgniteCheckedException If failed.
      */
-    private void finalizeCheckpointOnRecovery(
-        long cpTs,
-        UUID cpId,
-        WALPointer walPtr,
-        PageMemoryEx pageMem
+    private void writeDirtyPages(
+        PageMemoryEx pageMem,
+        Function<T3<FullPageId, ByteBuffer, Integer>, PageStore> onPageWrite
     ) throws IgniteCheckedException {
-        assert cpTs != 0;
 
         GridMultiCollectionWrapper<FullPageId> pageIds = pageMem.beginCheckpoint();
 
-        ByteBuffer tmpWriteBuf = ByteBuffer.allocateDirect(4096);
+        ByteBuffer tmpWriteBuf = ByteBuffer.allocateDirect(pageMem.pageSize());
 
         tmpWriteBuf.order(ByteOrder.nativeOrder());
 
-        // Identity stores set.
         Collection<PageStore> updStores = new HashSet<>();
 
         for (FullPageId pageId : pageIds) {
@@ -178,11 +186,11 @@ public class RestoreBinaryStateCommand implements Command {
             if (tag != null) {
                 tmpWriteBuf.rewind();
 
-                // PageStore store = storeMgr.writeInternal(pageId.groupId(), pageId.pageId(), tmpWriteBuf, tag, true);
+                PageStore store = onPageWrite.apply(new T3<>(pageId, tmpWriteBuf, tag));
 
                 tmpWriteBuf.rewind();
 
-                updStores.add(null);
+                updStores.add(store);
             }
         }
 
@@ -234,5 +242,9 @@ public class RestoreBinaryStateCommand implements Command {
         memMetrics.pageMemory(pageMem);
 
         return pageMem;
+    }
+
+    private Map<Integer, List<PageStore>> initPageStores(String pageStoreDir) {
+        return new HashMap<>();
     }
 }

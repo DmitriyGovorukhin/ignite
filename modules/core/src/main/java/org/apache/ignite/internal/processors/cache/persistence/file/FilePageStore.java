@@ -60,9 +60,6 @@ public class FilePageStore implements PageStore {
     /** */
     private final byte type;
 
-    /** Database configuration. */
-    protected final DataStorageConfiguration dbCfg;
-
     /** Factory to provide I/O interfaces for read/write operations with files */
     private final FileIOFactory ioFactory;
 
@@ -100,14 +97,14 @@ public class FilePageStore implements PageStore {
         byte type,
         File file,
         FileIOFactory factory,
-        DataStorageConfiguration cfg,
-        AllocatedPageTracker allocatedTracker) {
+        int pageSize,
+        AllocatedPageTracker allocatedTracker
+    ) {
         this.type = type;
         this.cfgFile = file;
-        this.dbCfg = cfg;
         this.ioFactory = factory;
         this.allocated = new AtomicLong();
-        this.pageSize = dbCfg.getPageSize();
+        this.pageSize = pageSize;
         this.allocatedTracker = allocatedTracker;
     }
 
@@ -160,13 +157,13 @@ public class FilePageStore implements PageStore {
      * @throws IOException If initialization is failed.
      */
     private long initFile() throws IOException {
-        ByteBuffer hdr = header(type, dbCfg.getPageSize());
+        ByteBuffer hdr = header(type, pageSize);
 
         while (hdr.remaining() > 0)
             fileIO.write(hdr);
 
         //there is 'super' page in every file
-        return headerSize() + dbCfg.getPageSize();
+        return headerSize() + pageSize;
     }
 
     /**
@@ -207,9 +204,9 @@ public class FilePageStore implements PageStore {
 
             int pageSize = hdr.getInt();
 
-            if (dbCfg.getPageSize() != pageSize)
+            if (this.pageSize != pageSize)
                 throw new IOException("Failed to verify store file (invalid page size)" +
-                    " [expectedPageSize=" + dbCfg.getPageSize() +
+                    " [expectedPageSize=" + this.pageSize +
                     ", filePageSize=" + pageSize + "]");
 
             long fileSize = cfgFile.length();
@@ -343,7 +340,7 @@ public class FilePageStore implements PageStore {
             assert pageBuf.position() == 0;
             assert pageBuf.order() == ByteOrder.nativeOrder();
             assert off <= (allocated.get() - headerSize()) : "calculatedOffset=" + off +
-                ", allocated=" + allocated.get() + ", headerSize="+headerSize();
+                ", allocated=" + allocated.get() + ", headerSize=" + headerSize();
 
             int len = pageSize;
 
@@ -485,7 +482,7 @@ public class FilePageStore implements PageStore {
 
             long off = pageOffset(pageId);
 
-            assert (off >= 0 && off + headerSize() <= allocated.get() ) || recover :
+            assert (off >= 0 && off + headerSize() <= allocated.get()) || recover :
                 "off=" + U.hexLong(off) + ", allocated=" + U.hexLong(allocated.get()) + ", pageId=" + U.hexLong(pageId);
 
             assert pageBuf.capacity() == pageSize;
@@ -503,7 +500,7 @@ public class FilePageStore implements PageStore {
 
             // Check whether crc was calculated somewhere above the stack if it is forcibly skipped.
             assert skipCrc || PageIO.getCrc(pageBuf) != 0 || calcCrc32(pageBuf, pageSize) == 0 :
-                    "CRC hasn't been calculated, crc=0";
+                "CRC hasn't been calculated, crc=0";
 
             assert pageBuf.position() == 0 : pageBuf.position();
 
@@ -546,7 +543,7 @@ public class FilePageStore implements PageStore {
 
     /** {@inheritDoc} */
     @Override public long pageOffset(long pageId) {
-        return (long) PageIdUtils.pageIndex(pageId) * pageSize + headerSize();
+        return (long)PageIdUtils.pageIndex(pageId) * pageSize + headerSize();
     }
 
     /** {@inheritDoc} */

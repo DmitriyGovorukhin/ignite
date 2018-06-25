@@ -45,29 +45,29 @@ public class FileVersionCheckingFactory implements FilePageStoreFactory {
     private FileIOFactory fileIOFactoryStoreV1;
 
     /** Memory configuration. */
-    private final DataStorageConfiguration memCfg;
+    private final int pageSize;
 
     /**
      * @param fileIOFactory File IO factory.
      * @param fileIOFactoryStoreV1 File IO factory for V1 page store and for version checking.
-     * @param memCfg Memory configuration.
+     * @param pageSize Page size.
      */
     public FileVersionCheckingFactory(
         FileIOFactory fileIOFactory,
         FileIOFactory fileIOFactoryStoreV1,
-        DataStorageConfiguration memCfg
+        int pageSize
     ) {
         this.fileIOFactory = fileIOFactory;
         this.fileIOFactoryStoreV1 = fileIOFactoryStoreV1;
-        this.memCfg = memCfg;
+        this.pageSize = pageSize;
     }
 
     /**
      * @param fileIOFactory File IO factory for V1 & V2 page store and for version checking.
-     * @param dsCfg Data storage configuration.
+     * @param pageSize Page size.
      */
-    public FileVersionCheckingFactory(FileIOFactory fileIOFactory, DataStorageConfiguration dsCfg) {
-        this(fileIOFactory, fileIOFactory, dsCfg);
+    public FileVersionCheckingFactory(FileIOFactory fileIOFactory, int pageSize) {
+        this(fileIOFactory, fileIOFactory, pageSize);
     }
 
     /** {@inheritDoc} */
@@ -134,10 +134,10 @@ public class FileVersionCheckingFactory implements FilePageStoreFactory {
     ) {
         switch (ver) {
             case FilePageStore.VERSION:
-                return new FilePageStore(type, file, fileIOFactoryStoreV1, memCfg, allocatedTracker);
+                return new FilePageStore(type, file, fileIOFactoryStoreV1, pageSize, allocatedTracker);
 
             case FilePageStoreV2.VERSION:
-                return new FilePageStoreV2(type, file, fileIOFactory, memCfg, allocatedTracker);
+                return new FilePageStoreV2(type, file, fileIOFactory, pageSize, allocatedTracker);
 
             default:
                 throw new IllegalArgumentException("Unknown version of file page store: " + ver + " for file [" + file.getAbsolutePath() + "]");
