@@ -3176,6 +3176,11 @@ public class GridCacheDatabaseSharedManager extends IgniteCacheDatabaseSharedMan
                 finally {
                     if (success) {
                         try {
+                            UUID chpId = chp.cpEntry.checkpointId();
+                            WALPointer ptr = chp.cpEntry.checkpointMark();
+
+                            cctx.wal().log(new CheckpointRecord(chpId, ptr, true));
+
                             markCheckpointEnd(chp);
                         }
                         catch (IgniteCheckedException e) {
