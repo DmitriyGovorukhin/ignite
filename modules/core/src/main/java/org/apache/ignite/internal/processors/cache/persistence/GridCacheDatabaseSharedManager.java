@@ -3928,7 +3928,7 @@ public class GridCacheDatabaseSharedManager extends IgniteCacheDatabaseSharedMan
     /**
      *
      */
-    private enum CheckpointEntryType {
+    public enum CheckpointEntryType {
         /** */
         START,
 
@@ -3983,12 +3983,12 @@ public class GridCacheDatabaseSharedManager extends IgniteCacheDatabaseSharedMan
     /**
      *
      */
-    private static class CheckpointStatus {
+    public static class CheckpointStatus {
         /** Null checkpoint UUID. */
-        private static final UUID NULL_UUID = new UUID(0L, 0L);
+        public static final UUID NULL_UUID = new UUID(0L, 0L);
 
         /** Null WAL pointer. */
-        private static final WALPointer NULL_PTR = new FileWALPointer(0, 0, 0);
+        public static final WALPointer NULL_PTR = new FileWALPointer(0, 0, 0);
 
         /** */
         private long cpStartTs;
@@ -4013,7 +4013,7 @@ public class GridCacheDatabaseSharedManager extends IgniteCacheDatabaseSharedMan
          * @param cpEndId Checkpoint end ID.
          * @param endPtr Checkpoint end pointer.
          */
-        private CheckpointStatus(long cpStartTs, UUID cpStartId, WALPointer startPtr, UUID cpEndId, WALPointer endPtr) {
+        public CheckpointStatus(long cpStartTs, UUID cpStartId, WALPointer startPtr, UUID cpEndId, WALPointer endPtr) {
             this.cpStartTs = cpStartTs;
             this.cpStartId = cpStartId;
             this.startPtr = startPtr;
