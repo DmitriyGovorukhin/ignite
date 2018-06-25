@@ -4,8 +4,6 @@ import java.io.File;
 import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
-import java.nio.file.Files;
-import java.util.Arrays;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -33,15 +31,15 @@ import org.apache.ignite.internal.pagemem.wal.record.delta.PageDeltaRecord;
 import org.apache.ignite.internal.pagemem.wal.record.delta.PartitionDestroyRecord;
 import org.apache.ignite.internal.pagemem.wal.record.delta.PartitionMetaStateRecord;
 import org.apache.ignite.internal.processors.cache.persistence.DataRegionMetricsImpl;
-import org.apache.ignite.internal.processors.cache.persistence.GridCacheDatabaseSharedManager;
-import org.apache.ignite.internal.processors.cache.persistence.GridCacheDatabaseSharedManager.CheckpointEntryType;
 import org.apache.ignite.internal.processors.cache.persistence.GridCacheDatabaseSharedManager.CheckpointStatus;
+import org.apache.ignite.internal.processors.cache.persistence.checkpoint.CheckpointEntryType;
 import org.apache.ignite.internal.processors.cache.persistence.file.AsyncFileIOFactory;
 import org.apache.ignite.internal.processors.cache.persistence.file.FileIO;
 import org.apache.ignite.internal.processors.cache.persistence.file.FileIOFactory;
 import org.apache.ignite.internal.processors.cache.persistence.pagemem.PageMemoryEx;
 import org.apache.ignite.internal.processors.cache.persistence.pagemem.PageMemoryImpl;
 import org.apache.ignite.internal.processors.cache.persistence.wal.FileWALPointer;
+import org.apache.ignite.internal.processors.cache.persistence.wal.reader.IgniteWalIteratorFactory;
 import org.apache.ignite.internal.util.GridMultiCollectionWrapper;
 import org.apache.ignite.internal.util.typedef.T3;
 import org.apache.ignite.lang.IgniteBiTuple;
@@ -55,24 +53,32 @@ public class RestoreBinaryStateCommand implements Command {
     private final FileIOFactory ioFactory = new AsyncFileIOFactory();
 
     @Override public void execute(String... args) {
-        String WALDir = args[0];
+        String walDir = args[0];
         String cpDir = args[1];
         String pageStoreDir = args[2];
 
         try {
+            //1. Read checkpoint status.
             CheckpointStatus checkpointStatus = readCheckpointStatus(cpDir);
 
+            //2. Check need restore or not.
             if (!checkpointStatus.needRestoreMemory())
                 return;
 
+            //3. Prepare memory for restore .
             PageMemoryEx pageMemoryEx = createMemory();
 
-            try (WALIterator it = null) {
+            IgniteWalIteratorFactory iteratorFactory = new IgniteWalIteratorFactory();
+
+            //4. Restore page snapshot and binary delta.
+            try (WALIterator it = iteratorFactory.iterator(walDir)) {
                 applyBinaryUpdates(it, pageMemoryEx);
             }
 
+            //5. Prepare page stores for write.
             Map<Integer, List<PageStore>> pageStores = initializePageStores(pageStoreDir);
 
+            //6. Write all in-memory update to page store.
             writeDirtyPages(pageMemoryEx, (tup) -> {
                 FullPageId fullPageId = tup.get1();
 
@@ -95,9 +101,11 @@ public class RestoreBinaryStateCommand implements Command {
 
                 return pageStore;
             });
+
+            finishCheckpoint(checkpointStatus);
         }
         catch (IgniteCheckedException e) {
-
+            e.printStackTrace();
         }
     }
 
@@ -332,5 +340,9 @@ public class RestoreBinaryStateCommand implements Command {
             throw new IgniteCheckedException(
                 "Failed to read checkpoint pointer from marker file: " + cpMarkerFile.getAbsolutePath(), e);
         }
+    }
+
+    private void finishCheckpoint(CheckpointStatus checkpointStatus) {
+
     }
 }

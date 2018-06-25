@@ -3954,6 +3954,14 @@ public class GridCacheDatabaseSharedManager extends IgniteCacheDatabaseSharedMan
             return !F.eq(cpStartId, cpEndId) && !F.eq(NULL_UUID, cpStartId);
         }
 
+        public long getCpStartTs() {
+            return cpStartTs;
+        }
+
+        public UUID getCpStartId() {
+            return cpStartId;
+        }
+
         /** {@inheritDoc} */
         public String toString() {
             return S.toString(CheckpointStatus.class, this);
