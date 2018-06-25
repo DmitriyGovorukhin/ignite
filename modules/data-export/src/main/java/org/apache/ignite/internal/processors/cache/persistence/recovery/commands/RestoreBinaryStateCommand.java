@@ -1,7 +1,6 @@
 package org.apache.ignite.internal.processors.cache.persistence.recovery.commands;
 
 import java.io.File;
-import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
 import java.util.Collection;
@@ -9,9 +8,7 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
-import java.util.UUID;
 import java.util.function.Function;
-import java.util.regex.Matcher;
 import org.apache.ignite.IgniteCheckedException;
 import org.apache.ignite.IgniteException;
 import org.apache.ignite.configuration.DataRegionConfiguration;
@@ -32,25 +29,19 @@ import org.apache.ignite.internal.pagemem.wal.record.delta.PartitionDestroyRecor
 import org.apache.ignite.internal.pagemem.wal.record.delta.PartitionMetaStateRecord;
 import org.apache.ignite.internal.processors.cache.persistence.DataRegionMetricsImpl;
 import org.apache.ignite.internal.processors.cache.persistence.GridCacheDatabaseSharedManager.CheckpointStatus;
-import org.apache.ignite.internal.processors.cache.persistence.checkpoint.CheckpointEntryType;
 import org.apache.ignite.internal.processors.cache.persistence.file.AsyncFileIOFactory;
-import org.apache.ignite.internal.processors.cache.persistence.file.FileIO;
 import org.apache.ignite.internal.processors.cache.persistence.file.FileIOFactory;
 import org.apache.ignite.internal.processors.cache.persistence.pagemem.PageMemoryEx;
 import org.apache.ignite.internal.processors.cache.persistence.pagemem.PageMemoryImpl;
-import org.apache.ignite.internal.processors.cache.persistence.wal.FileWALPointer;
+import org.apache.ignite.internal.processors.cache.persistence.recovery.CheckpointStateResolver;
 import org.apache.ignite.internal.processors.cache.persistence.wal.reader.IgniteWalIteratorFactory;
 import org.apache.ignite.internal.util.GridMultiCollectionWrapper;
 import org.apache.ignite.internal.util.typedef.T3;
 import org.apache.ignite.lang.IgniteBiTuple;
 
-import static java.nio.file.StandardOpenOption.READ;
 import static org.apache.ignite.internal.pagemem.PageIdUtils.partId;
-import static org.apache.ignite.internal.processors.cache.persistence.GridCacheDatabaseSharedManager.CP_FILE_NAME_PATTERN;
 
 public class RestoreBinaryStateCommand implements Command {
-
-    private final FileIOFactory ioFactory = new AsyncFileIOFactory();
 
     @Override public void execute(String... args) {
         String walDir = args[0];
@@ -58,8 +49,11 @@ public class RestoreBinaryStateCommand implements Command {
         String pageStoreDir = args[2];
 
         try {
+            CheckpointStateResolver checkpointStateResolver = new CheckpointStateResolver(
+                new File(cpDir), new File(walDir));
+
             //1. Read checkpoint status.
-            CheckpointStatus checkpointStatus = readCheckpointStatus(cpDir);
+            CheckpointStatus checkpointStatus = checkpointStateResolver.lastCheckpointStatus();
 
             //2. Check need restore or not.
             if (!checkpointStatus.needRestoreMemory())
@@ -274,72 +268,6 @@ public class RestoreBinaryStateCommand implements Command {
 
     private Map<Integer, List<PageStore>> initializePageStores(String pageStoreDir) {
         return new HashMap<>();
-    }
-
-    private CheckpointStatus readCheckpointStatus(String cpDir) throws IgniteCheckedException {
-        long lastStartTs = 0;
-        long lastEndTs = 0;
-
-        UUID startId = CheckpointStatus.NULL_UUID;
-        UUID endId = CheckpointStatus.NULL_UUID;
-
-        File startFile = null;
-        File endFile = null;
-
-        WALPointer startPtr = CheckpointStatus.NULL_PTR;
-        WALPointer endPtr = CheckpointStatus.NULL_PTR;
-
-        File dir = new File(cpDir);
-
-        File[] files = dir.listFiles();
-
-        for (File file : files) {
-            Matcher matcher = CP_FILE_NAME_PATTERN.matcher(file.getName());
-
-            if (matcher.matches()) {
-                long ts = Long.parseLong(matcher.group(1));
-                UUID id = UUID.fromString(matcher.group(2));
-                CheckpointEntryType type = CheckpointEntryType.valueOf(matcher.group(3));
-
-                if (type == CheckpointEntryType.START && ts > lastStartTs) {
-                    lastStartTs = ts;
-                    startId = id;
-                    startFile = file;
-                }
-                else if (type == CheckpointEntryType.END && ts > lastEndTs) {
-                    lastEndTs = ts;
-                    endId = id;
-                    endFile = file;
-                }
-            }
-        }
-
-        ByteBuffer buf = ByteBuffer.allocate(20);
-        buf.order(ByteOrder.nativeOrder());
-
-        if (startFile != null)
-            startPtr = readPointer(startFile, buf);
-
-        if (endFile != null)
-            endPtr = readPointer(endFile, buf);
-
-        return new CheckpointStatus(lastStartTs, startId, startPtr, endId, endPtr);
-    }
-
-    private WALPointer readPointer(File cpMarkerFile, ByteBuffer buf) throws IgniteCheckedException {
-        buf.position(0);
-
-        try (FileIO io = ioFactory.create(cpMarkerFile, READ)) {
-            io.read(buf);
-
-            buf.flip();
-
-            return new FileWALPointer(buf.getLong(), buf.getInt(), buf.getInt());
-        }
-        catch (IOException e) {
-            throw new IgniteCheckedException(
-                "Failed to read checkpoint pointer from marker file: " + cpMarkerFile.getAbsolutePath(), e);
-        }
     }
 
     private void finishCheckpoint(CheckpointStatus checkpointStatus) {
