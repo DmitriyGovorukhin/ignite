@@ -10,6 +10,9 @@ import org.apache.ignite.IgniteCheckedException;
 import org.apache.ignite.configuration.DataStorageConfiguration;
 import org.apache.ignite.internal.pagemem.PageMemory;
 import org.apache.ignite.internal.processors.cache.persistence.AllocatedPageTracker;
+import org.apache.ignite.internal.processors.cache.persistence.file.AsyncFileIOFactory;
+import org.apache.ignite.internal.processors.cache.persistence.file.FileIO;
+import org.apache.ignite.internal.processors.cache.persistence.file.FileIOFactory;
 import org.apache.ignite.internal.processors.cache.persistence.file.FilePageStore;
 import org.apache.ignite.internal.processors.cache.persistence.file.FilePageStoreFactory;
 import org.apache.ignite.internal.processors.cache.persistence.file.FileVersionCheckingFactory;
@@ -80,9 +83,15 @@ public class StoreTest extends GridCommonAbstractTest {
 
         NodeFilesFinder storeFinder = new NodeFilesFinder();
 
-        List<Finder.FileDescriptor> stores = storeFinder.find(U.defaultWorkDirectory(), PAGE_STORE);
+        List<PageStoreDescriptor> descs = storeFinder.find(U.defaultWorkDirectory(), PAGE_STORE);
 
-        PartitionPageStore partitionPageStore = new PartitionPageStore((PageStoreDescriptor)stores.get(0), null);
+        PageStoreDescriptor desc = descs.get(0);
+
+        FileIOFactory ioFactory = new AsyncFileIOFactory();
+
+        FileIO fileIO = ioFactory.create(desc.file());
+
+        PartitionPageStore partitionPageStore = new PartitionPageStore(desc, fileIO);
 
         PageIterator it = partitionPageStore.iterator();
 

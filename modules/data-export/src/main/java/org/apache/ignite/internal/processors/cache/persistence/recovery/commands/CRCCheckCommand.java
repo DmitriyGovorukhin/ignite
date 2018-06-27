@@ -4,6 +4,7 @@ import java.io.IOException;
 import java.nio.file.StandardOpenOption;
 import java.util.ArrayList;
 import java.util.List;
+import org.apache.ignite.IgniteException;
 import org.apache.ignite.internal.processors.cache.persistence.file.AsyncFileIOFactory;
 import org.apache.ignite.internal.processors.cache.persistence.file.FileIO;
 import org.apache.ignite.internal.processors.cache.persistence.file.FileIOFactory;
@@ -17,6 +18,7 @@ import org.apache.ignite.internal.processors.cache.persistence.recovery.read.pag
 import org.apache.ignite.internal.processors.cache.persistence.recovery.read.page.handlers.ProgressBar;
 import org.apache.ignite.internal.processors.cache.persistence.recovery.read.page.handlers.TimeTracker;
 import org.apache.ignite.internal.processors.cache.persistence.recovery.store.page.PartitionPageStore;
+import org.apache.ignite.internal.util.typedef.F;
 
 import static org.apache.ignite.internal.processors.cache.persistence.recovery.finder.Finder.Type.PAGE_STORE;
 
@@ -26,14 +28,19 @@ public class CRCCheckCommand implements Command {
     private final FileIOFactory ioFactory = new AsyncFileIOFactory();
 
     @Override public void execute(String... args) {
-        for (Finder.FileDescriptor desc : resolvePageStoreDescriptors(args)) {
-            System.out.println("start CRC checking... ");
+        String path = args[0];
+
+        List<PageStoreDescriptor> descs = storeFinder.find(path, PAGE_STORE);
+
+        if (F.isEmpty(descs))
+            throw new IgniteException("Page store not found, path=" + path);
+
+        for (PageStoreDescriptor desc : descs) {
+            System.out.println("CRC checking");
 
             System.out.println(desc);
 
-            checkCRC((PageStoreDescriptor)desc);
-
-            System.out.println("CRC checking finished...\n");
+            checkCRC(desc);
         }
     }
 
@@ -64,14 +71,5 @@ public class CRCCheckCommand implements Command {
 
             e.printStackTrace(System.err);
         }
-    }
-
-    private List<Finder.FileDescriptor> resolvePageStoreDescriptors(String... paths) {
-        List<Finder.FileDescriptor> res = new ArrayList<>();
-
-        for (String path : paths)
-            res.addAll(storeFinder.find(path, PAGE_STORE));
-
-        return res;
     }
 }

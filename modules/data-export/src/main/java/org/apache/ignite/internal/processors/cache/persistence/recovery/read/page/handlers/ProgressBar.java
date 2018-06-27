@@ -33,10 +33,10 @@ public class ProgressBar extends PageReadHandler {
         long after = processed / ration;
 
         if (after > before)
-            updateBar(after);
+            updateProgress(after);
     }
 
-    private void updateBar(long barSize) {
+    private void updateProgress(long barSize) {
         StringBuilder bar = new StringBuilder();
 
         for (int i = 0; i < BAR; i++) {
@@ -57,7 +57,7 @@ public class ProgressBar extends PageReadHandler {
     }
 
     @Override public void onComplete() {
-        updateBar(BAR);
+        updateProgress(BAR);
 
         System.out.print("\n");
     }
