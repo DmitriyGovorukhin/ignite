@@ -18,11 +18,11 @@ import static java.util.Arrays.asList;
 
 public abstract class Finder<T extends Finder.FileDescriptor> {
 
-    public List<T> find(String path, Type... t) {
+    public<A extends T> List<A> find(String path, Type... t) {
         if (F.isEmpty(t))
             t = Type.values();
 
-        List<T> res = new ArrayList<>();
+        List<A> res = new ArrayList<>();
 
         Set<Type> types = new HashSet<>(asList(t));
 
@@ -49,7 +49,7 @@ public abstract class Finder<T extends Finder.FileDescriptor> {
 
     protected abstract Type fileType(File file);
 
-    protected abstract T createDescriptor(File file, Type type);
+    protected abstract<A> A createDescriptor(File file, Type type);
 
     public enum Type {
         WAL,

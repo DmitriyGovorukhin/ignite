@@ -1,4 +1,4 @@
-package org.apache.ignite.internal.processors.cache.persistence.recovery.scan.handlers.extractor;
+package org.apache.ignite.internal.processors.cache.persistence.recovery.read.page.handlers.extractor;
 
 import java.io.File;
 import java.util.HashSet;

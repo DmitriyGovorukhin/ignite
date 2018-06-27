@@ -1,4 +1,4 @@
-package org.apache.ignite.internal.processors.cache.persistence.recovery.scan.handlers.extractor;
+package org.apache.ignite.internal.processors.cache.persistence.recovery.read.page.handlers.extractor;
 
 import java.util.List;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -12,8 +12,7 @@ import org.apache.ignite.configuration.IgniteConfiguration;
 import org.apache.ignite.internal.processors.cache.persistence.recovery.finder.Finder;
 import org.apache.ignite.internal.processors.cache.persistence.recovery.finder.NodeFilesFinder;
 import org.apache.ignite.internal.processors.cache.persistence.recovery.finder.filedescriptors.PageStoreDescriptor;
-import org.apache.ignite.internal.processors.cache.persistence.recovery.read.page.handlers.extractor.FrameChainBuilder;
-import org.apache.ignite.internal.processors.cache.persistence.recovery.read.page.handlers.extractor.KeyValueExtractor;
+import org.apache.ignite.internal.processors.cache.persistence.recovery.model.KeyValue;
 import org.apache.ignite.internal.processors.cache.persistence.recovery.store.page.PartitionPageStore;
 import org.apache.ignite.internal.processors.cache.persistence.recovery.read.page.PartitionPageStoreReader;
 import org.apache.ignite.internal.processors.cache.persistence.recovery.read.page.handlers.PageCounter;
@@ -76,7 +75,7 @@ public class KeyValueExtractorTest extends GridCommonAbstractTest {
 
         PageStoreDescriptor desc = (PageStoreDescriptor)stores.get(1);
 
-        PartitionPageStore partitionPageStore = new PartitionPageStore(desc,null);
+        PartitionPageStore partitionPageStore = new PartitionPageStore(desc, null);
 
         PartitionPageStoreReader scanner = new PartitionPageStoreReader(partitionPageStore);
 
@@ -94,10 +93,14 @@ public class KeyValueExtractorTest extends GridCommonAbstractTest {
 
         AtomicInteger cnt = new AtomicInteger();
 
-        KeyValueExtractor ex = new KeyValueExtractor((kv) -> {
-            cnt.incrementAndGet();
+        frameChainBuilder.addConsumer((head) -> {
+            DataEntryTransformer dataEntryFrameTransformer = new DataEntryTransformer();
 
-        }, frameChainBuilder);
+            KeyValue keyValue = dataEntryFrameTransformer.map(head);
+
+            if (keyValue != null)
+                cnt.incrementAndGet();
+        });
 
         scanner.read();
 

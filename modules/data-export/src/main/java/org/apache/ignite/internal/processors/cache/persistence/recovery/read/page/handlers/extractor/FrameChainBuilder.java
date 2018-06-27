@@ -1,6 +1,7 @@
 package org.apache.ignite.internal.processors.cache.persistence.recovery.read.page.handlers.extractor;
 
 import java.nio.ByteBuffer;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
@@ -9,28 +10,28 @@ import java.util.function.Consumer;
 import org.apache.ignite.internal.pagemem.PageIdUtils;
 import org.apache.ignite.internal.pagemem.PageUtils;
 import org.apache.ignite.internal.processors.cache.persistence.recovery.finder.filedescriptors.PageStoreDescriptor;
-import org.apache.ignite.internal.processors.cache.persistence.recovery.scan.ScanAdapter;
+import org.apache.ignite.internal.processors.cache.persistence.recovery.read.page.PageReadHandler;
 import org.apache.ignite.internal.processors.cache.persistence.tree.io.DataPageIO;
 import org.apache.ignite.internal.processors.cache.persistence.tree.io.DataPagePayload;
 import org.apache.ignite.internal.processors.cache.persistence.tree.io.PageIO;
 import sun.nio.ch.DirectBuffer;
 
-public class FrameChainBuilder extends ScanAdapter {
+public class FrameChainBuilder extends PageReadHandler {
     public static final int THRESHOLD = 4030;
 
     private final Map<Long, Frame> frames = new HashMap<>();
 
-    private final List<Consumer<Frame>> frameConsumers = new LinkedList<>();
+    private final List<Consumer<Frame>> frameConsumers = new ArrayList<>();
 
-    public FrameChainBuilder(PageStoreDescriptor descriptor) {
-        super(descriptor);
+    public FrameChainBuilder(PageStoreDescriptor desc) {
+        super(desc);
     }
 
     public void addConsumer(Consumer<Frame> consumer) {
         frameConsumers.add(consumer);
     }
 
-    @Override public void onNextPage(ByteBuffer buf) {
+    @Override public void onNextRead(ByteBuffer buf) {
         if (PageIO.getType(buf) != PageIO.T_DATA)
             return;
 
@@ -57,7 +58,7 @@ public class FrameChainBuilder extends ScanAdapter {
         }
     }
 
-    public void onNextFrame(long link, byte[] bytes, long nextLink) {
+    void onNextFrame(long link, byte[] bytes, long nextLink) {
         Frame waiter = frames.remove(link);
 
         Frame frame = new Frame(link, bytes, nextLink);
