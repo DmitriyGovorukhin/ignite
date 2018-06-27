@@ -1,7 +1,6 @@
 package org.apache.ignite.internal.processors.cache.persistence.recovery.finder;
 
 import java.util.List;
-import java.util.stream.Collectors;
 import org.apache.ignite.Ignite;
 import org.apache.ignite.IgniteCheckedException;
 import org.apache.ignite.IgniteDataStreamer;
@@ -10,7 +9,7 @@ import org.apache.ignite.configuration.CacheConfiguration;
 import org.apache.ignite.configuration.DataRegionConfiguration;
 import org.apache.ignite.configuration.DataStorageConfiguration;
 import org.apache.ignite.configuration.IgniteConfiguration;
-import org.apache.ignite.internal.processors.cache.persistence.recovery.finder.Finder.Descriptor;
+import org.apache.ignite.internal.processors.cache.persistence.recovery.finder.Finder.FileDescriptor;
 import org.apache.ignite.internal.util.typedef.internal.U;
 import org.apache.ignite.spi.discovery.tcp.TcpDiscoverySpi;
 import org.apache.ignite.spi.discovery.tcp.ipfinder.TcpDiscoveryIpFinder;
@@ -77,13 +76,13 @@ public class NodeFilesFinderTest extends GridCommonAbstractTest {
 
         NodeFilesFinder nodeFilesFinder = new NodeFilesFinder();
 
-        List<Descriptor> desc = nodeFilesFinder.find(workDirectory);
+        List<FileDescriptor> desc = nodeFilesFinder.find(workDirectory);
 
-        List<Descriptor> cp = desc.stream().filter(d -> d.type() == CP).collect(toList());
-        List<Descriptor> wal = desc.stream().filter(d -> d.type() == WAL).collect(toList());
-        List<Descriptor> pageStore = desc.stream().filter(d -> d.type() == PAGE_STORE).collect(toList());
-        List<Descriptor> index = desc.stream().filter(d -> d.type() == INDEX_STORE).collect(toList());
-        List<Descriptor> nodeStart = desc.stream().filter(d -> d.type() == NODE_START).collect(toList());
+        List<FileDescriptor> cp = desc.stream().filter(d -> d.type() == CP).collect(toList());
+        List<FileDescriptor> wal = desc.stream().filter(d -> d.type() == WAL).collect(toList());
+        List<FileDescriptor> pageStore = desc.stream().filter(d -> d.type() == PAGE_STORE).collect(toList());
+        List<FileDescriptor> index = desc.stream().filter(d -> d.type() == INDEX_STORE).collect(toList());
+        List<FileDescriptor> nodeStart = desc.stream().filter(d -> d.type() == NODE_START).collect(toList());
 
         System.out.println("cp " + cp.size() + " wal " + wal.size() +
             " pageStore " + pageStore.size() + " index " + index.size() + " nodeStart " + nodeStart.size());

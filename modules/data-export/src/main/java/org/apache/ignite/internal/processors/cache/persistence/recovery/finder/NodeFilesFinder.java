@@ -12,9 +12,9 @@ import org.apache.ignite.internal.pagemem.wal.record.WALRecord;
 import org.apache.ignite.internal.processors.cache.persistence.file.FileIO;
 import org.apache.ignite.internal.processors.cache.persistence.file.FileIOFactory;
 import org.apache.ignite.internal.processors.cache.persistence.file.FilePageStore;
-import org.apache.ignite.internal.processors.cache.persistence.recovery.finder.descriptors.CPFileDescriptor;
-import org.apache.ignite.internal.processors.cache.persistence.recovery.finder.descriptors.PageStoreDescriptor;
-import org.apache.ignite.internal.processors.cache.persistence.recovery.finder.descriptors.WALDescriptor;
+import org.apache.ignite.internal.processors.cache.persistence.recovery.finder.filedescriptors.CPDescriptor;
+import org.apache.ignite.internal.processors.cache.persistence.recovery.finder.filedescriptors.PageStoreDescriptor;
+import org.apache.ignite.internal.processors.cache.persistence.recovery.finder.filedescriptors.WALDescriptor;
 import org.apache.ignite.internal.processors.cache.persistence.wal.ByteBufferExpander;
 import org.apache.ignite.internal.processors.cache.persistence.wal.FileInput;
 import org.apache.ignite.internal.processors.cache.persistence.wal.FileWALPointer;
@@ -24,12 +24,13 @@ import org.apache.ignite.internal.util.typedef.internal.U;
 
 import static org.apache.ignite.internal.processors.cache.persistence.GridCacheDatabaseSharedManager.CP_FILE_NAME_PATTERN;
 import static org.apache.ignite.internal.processors.cache.persistence.recovery.finder.Finder.Type.CP;
+import static org.apache.ignite.internal.processors.cache.persistence.recovery.finder.Finder.Type.UNKNOWN;
 import static org.apache.ignite.internal.processors.cache.persistence.recovery.finder.Finder.Type.WAL;
 import static org.apache.ignite.internal.processors.cache.persistence.wal.FileWriteAheadLogManager.WAL_NAME_PATTERN;
 import static org.apache.ignite.internal.processors.cache.persistence.wal.FileWriteAheadLogManager.WAL_SEGMENT_FILE_COMPACTED_PATTERN;
 import static org.apache.ignite.internal.processors.cache.persistence.wal.serializer.RecordV1Serializer.HEADER_RECORD_SIZE;
 
-public class NodeFilesFinder extends Finder<Finder.Descriptor> {
+public class NodeFilesFinder extends Finder<Finder.FileDescriptor> {
 
     private final FileIOFactory ioFactory = new DataStorageConfiguration().getFileIOFactory();
 
@@ -45,10 +46,10 @@ public class NodeFilesFinder extends Finder<Finder.Descriptor> {
         if (isWalFile(name))
             return Type.WAL;
 
-        return null;
+        return UNKNOWN;
     }
 
-    @Override protected Descriptor createDescriptor(File file, Type type) {
+    @Override protected FileDescriptor createDescriptor(File file, Type type) {
         switch (type) {
             case PAGE_STORE:
                 return createPageStoreDescriptor(file);
@@ -146,7 +147,7 @@ public class NodeFilesFinder extends Finder<Finder.Descriptor> {
         return Integer.valueOf(split[1].substring(0, split[1].indexOf(".bin")));
     }
 
-    private CPFileDescriptor createCheckPointDescriptor(File file) {
+    private CPDescriptor createCheckPointDescriptor(File file) {
         Matcher matcher = CP_FILE_NAME_PATTERN.matcher(file.getName());
 
         matcher.matches();
@@ -155,7 +156,7 @@ public class NodeFilesFinder extends Finder<Finder.Descriptor> {
         UUID id = UUID.fromString(matcher.group(2));
         String type = matcher.group(3);
 
-        return new CPFileDescriptor() {
+        return new CPDescriptor() {
             @Override public long time() {
                 return ts;
             }

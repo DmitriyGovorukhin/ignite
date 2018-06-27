@@ -16,7 +16,7 @@ import static java.nio.file.Files.walkFileTree;
 import static java.nio.file.Paths.get;
 import static java.util.Arrays.asList;
 
-public abstract class Finder<T extends Finder.Descriptor> {
+public abstract class Finder<T extends Finder.FileDescriptor> {
 
     public List<T> find(String path, Type... t) {
         if (F.isEmpty(t))
@@ -56,10 +56,11 @@ public abstract class Finder<T extends Finder.Descriptor> {
         CP,
         NODE_START,
         PAGE_STORE,
-        INDEX_STORE
+        INDEX_STORE,
+        UNKNOWN
     }
 
-    public interface Descriptor {
+    public interface FileDescriptor {
         File file();
 
         Type type();

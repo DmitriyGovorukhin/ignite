@@ -31,7 +31,7 @@ import org.apache.ignite.internal.processors.cache.persistence.DataRegionMetrics
 import org.apache.ignite.internal.processors.cache.persistence.GridCacheDatabaseSharedManager.CheckpointStatus;
 import org.apache.ignite.internal.processors.cache.persistence.pagemem.PageMemoryEx;
 import org.apache.ignite.internal.processors.cache.persistence.pagemem.PageMemoryImpl;
-import org.apache.ignite.internal.processors.cache.persistence.recovery.CheckpointStateResolver;
+import org.apache.ignite.internal.processors.cache.persistence.recovery.consistency.CheckpointStateResolver;
 import org.apache.ignite.internal.processors.cache.persistence.wal.reader.IgniteWalIteratorFactory;
 import org.apache.ignite.internal.util.GridMultiCollectionWrapper;
 import org.apache.ignite.internal.util.typedef.T3;
